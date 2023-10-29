@@ -8,7 +8,7 @@ import (
 	"path"
 )
 
-var homeDir string = "/Users/alexey.porandaikin/Projects/go/projects/crypto_loader"
+var homeDir string = "./"
 
 var cacheDir string = path.Join(homeDir, "storage/cache")
 

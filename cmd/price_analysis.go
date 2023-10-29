@@ -12,9 +12,9 @@ import (
 )
 
 var priceAnalysis = &cobra.Command{
-	Use: "price-AnalysisCmd",
+	Use: "price-analysis",
 	Run: func(cmd *cobra.Command, args []string) {
-		const DefaultRecalculateDuration = 5 * time.Hour
+		const DefaultRecalculateDuration = time.Hour
 		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer cancel()
 		db, err := repositories.CreateDB(repositories.Config{

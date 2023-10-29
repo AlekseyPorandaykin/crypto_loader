@@ -43,7 +43,7 @@ func (p *Price) Run(ctx context.Context, d time.Duration) error {
 
 func (p *Price) execute(ctx context.Context) error {
 	defer func(start time.Time) {
-		zap.L().Info("Price analysis calculated", zap.Float64("execute_sec", time.Since(start).Seconds()))
+		zap.L().Info("Price analysis calculated", zap.String("execute_sec", time.Since(start).String()))
 	}(time.Now())
 	return backoff.Retry(func() error {
 		return p.calculate(ctx)
