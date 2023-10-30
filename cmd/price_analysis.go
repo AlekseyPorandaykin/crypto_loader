@@ -31,7 +31,8 @@ var priceAnalysis = &cobra.Command{
 		}
 		defer func() { _ = db.Close() }()
 		priceRepo := repositories.NewPriceRepository(db)
-		ap := analasis.NewPrice(priceRepo)
+		priceChangesRepo := repositories.NewPriceChanges(db)
+		ap := analasis.NewPrice(priceRepo, priceChangesRepo)
 		go func() {
 			defer cancel()
 			if err := ap.Run(ctx, DefaultRecalculateDuration); err != nil {

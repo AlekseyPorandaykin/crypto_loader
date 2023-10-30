@@ -37,7 +37,7 @@ var httpServerCmd = &cobra.Command{
 		priceRepo := repositories.NewPriceRepository(db)
 		//Storage
 		priceStorage := storage.NewPriceStorage(priceRepo, cacheDir)
-		serv := http.NewServer(":80", priceStorage)
+		serv := http.NewServer(":8080", priceStorage)
 		defer serv.Close()
 		go func() {
 			if err := serv.Run(); err != nil && !errors.Is(err, context.Canceled) {

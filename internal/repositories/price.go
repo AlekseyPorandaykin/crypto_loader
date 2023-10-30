@@ -136,42 +136,11 @@ ORDER BY  datetime ASC
 	return result, nil
 }
 
-func (repo *PriceRepository) SaveAvgCoefficient(ctx context.Context, data []domain.AfgCoefficient) error {
-	var (
-		query = `
-INSERT INTO 
-    prices_avg_coefficients(symbol, exchange, datetime, afg_value, price, prev_price, created_at) 
-VALUES %s ON CONFLICT (symbol, exchange, datetime) DO NOTHING
+func (repo *PriceRepository) DeleteOldData(ctx context.Context, to time.Time) error {
+	var query = `
+DELETE FROM prices WHERE datetime < $1
 `
-		params []string
-	)
-	for _, item := range data {
-		params = append(
-			params,
-			fmt.Sprintf(
-				"('%s', '%s', '%s', %d, %f, %f, '%s')",
-				item.Symbol,
-				item.Exchange,
-				item.Date.Format(DatetimeFormat),
-				item.AfgValue,
-				item.Price,
-				item.PrevPrice,
-				item.CreatedAt.Format(DatetimeFormat),
-			))
-	}
-	if _, err := repo.db.ExecContext(ctx, fmt.Sprintf(query, strings.Join(params, ","))); err != nil {
-		return err
-	}
-	return nil
-}
+	_, err := repo.db.ExecContext(ctx, query, to)
 
-func (repo *PriceRepository) LastUpdateAvgCoefficientDatetime(ctx context.Context) (time.Time, error) {
-	var (
-		query    = `SELECT max(created_at) FROM prices_avg_coefficients`
-		datetime time.Time
-	)
-	if err := repo.db.GetContext(ctx, &datetime, query); err != nil {
-		return time.Time{}, err
-	}
-	return datetime, nil
+	return err
 }

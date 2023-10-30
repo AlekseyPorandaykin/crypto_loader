@@ -15,11 +15,12 @@ import (
 type exchangePrices map[time.Time]map[string]float64
 
 type Price struct {
-	repo *repositories.PriceRepository
+	priceRepo        *repositories.PriceRepository
+	priceChangesRepo *repositories.PriceChanges
 }
 
-func NewPrice(repo *repositories.PriceRepository) *Price {
-	return &Price{repo: repo}
+func NewPrice(priceRepo *repositories.PriceRepository, priceChangesRepo *repositories.PriceChanges) *Price {
+	return &Price{priceRepo: priceRepo, priceChangesRepo: priceChangesRepo}
 }
 
 func (p *Price) Run(ctx context.Context, d time.Duration) error {
@@ -53,13 +54,16 @@ func (p *Price) execute(ctx context.Context) error {
 func (p *Price) calculate(ctx context.Context) error {
 	firstDatetime := p.lastUpdateDatetime(ctx)
 	zap.L().Debug("load first datetime", zap.Time("datetime", firstDatetime))
-	symbols, err := p.repo.PopularSymbols(ctx, 3)
+	symbols, err := p.priceRepo.PopularSymbols(ctx, 3)
 	if err != nil {
 		return errors.Wrap(err, "get all symbols")
 	}
 	for _, symbol := range symbols {
 		zap.L().Debug("run avg_coefficient", zap.String("symbol", symbol))
 		p.runAvgCoefficient(ctx, symbol, firstDatetime)
+	}
+	if err := p.clearOldPrices(ctx); err != nil {
+		zap.L().Error("error clear old prices", zap.Error(err))
 	}
 
 	return nil
@@ -89,7 +93,7 @@ func (p *Price) runAvgCoefficient(ctx context.Context, symbol string, from time.
 func (p *Price) loadSymbolData(ctx context.Context, symbol string, from, to time.Time) (exchangePrices, []time.Time, error) {
 	data := make(exchangePrices)
 	keys := make([]time.Time, 0, 100)
-	symbolPrices, err := p.repo.SymbolPrices(ctx, symbol, from, to)
+	symbolPrices, err := p.priceRepo.SymbolPrices(ctx, symbol, from, to)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -148,14 +152,14 @@ func (p *Price) calculateAvgCoefficient(ctx context.Context, data exchangePrices
 	if len(result) == 0 {
 		return
 	}
-	if err := p.repo.SaveAvgCoefficient(ctx, result); err != nil {
+	if err := p.priceChangesRepo.Save(ctx, result); err != nil {
 		zap.L().Error("save avg_coefficient", zap.Error(err))
 	}
 	zap.L().Debug("save avg_coefficient", zap.String("symbol", symbol), zap.Int("count", len(result)))
 }
 
 func (p *Price) lastUpdateDatetime(ctx context.Context) time.Time {
-	lastDatetime, err := p.repo.LastUpdateAvgCoefficientDatetime(ctx)
+	lastDatetime, err := p.priceChangesRepo.LastDatetimeRow(ctx)
 	if err != nil {
 		zap.L().Error("init last update avg coefficient datetime", zap.Error(err))
 	}
@@ -163,7 +167,7 @@ func (p *Price) lastUpdateDatetime(ctx context.Context) time.Time {
 		return lastDatetime
 	}
 
-	firstDatetime, err := p.repo.FirstDatetime(ctx)
+	firstDatetime, err := p.priceRepo.FirstDatetime(ctx)
 	if err != nil {
 		zap.L().Error("init first datetime", zap.Error(err))
 	}
@@ -172,4 +176,15 @@ func (p *Price) lastUpdateDatetime(ctx context.Context) time.Time {
 	}
 
 	return time.Now().Add(-10 * 24 * time.Hour)
+}
+
+func (p *Price) clearOldPrices(ctx context.Context) error {
+	lastDatetime, err := p.priceChangesRepo.LastDatetimeRow(ctx)
+	if err != nil {
+		return errors.Wrap(err, "get last datetime")
+	}
+	if err := p.priceRepo.DeleteOldData(ctx, lastDatetime); err != nil {
+		return errors.Wrap(err, "delete old prices")
+	}
+	return nil
 }
