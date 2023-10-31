@@ -25,7 +25,7 @@ var priceCmd = &cobra.Command{
 	Use:   "price",
 	Short: "Load prices from external sources",
 	Run: func(cmd *cobra.Command, args []string) {
-		const defaultDurationRequest = time.Minute / 10
+		const defaultDurationRequest = time.Minute
 
 		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer cancel()
