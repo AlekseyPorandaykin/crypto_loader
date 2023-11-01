@@ -3,6 +3,7 @@ package loaders
 import (
 	"context"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
 	"go.uber.org/zap"
 	"sync"
 	"time"
@@ -18,10 +19,12 @@ type Price struct {
 	muPrices sync.Mutex
 	prices   []domain.SymbolPrice
 
-	storage domain.PriceStorage
+	storage *storage.PriceStorage
+
+	subscribes []chan<- struct{}
 }
 
-func NewPrice(storage domain.PriceStorage) *Price {
+func NewPrice(storage *storage.PriceStorage) *Price {
 	return &Price{
 		clients: make(map[string]Client),
 		prices:  make([]domain.SymbolPrice, 0, 10000),
@@ -31,6 +34,10 @@ func NewPrice(storage domain.PriceStorage) *Price {
 
 func (p *Price) AddClient(name string, client Client) {
 	p.clients[name] = client
+}
+
+func (p *Price) AddSubscribe(s chan<- struct{}) {
+	p.subscribes = append(p.subscribes, s)
 }
 
 func (p *Price) Run(ctx context.Context, d time.Duration) {
@@ -50,20 +57,6 @@ func (p *Price) Run(ctx context.Context, d time.Duration) {
 			}
 		}(name, client)
 	}
-
-	go func() {
-		ticker := time.NewTicker(time.Minute)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				p.savePrices(ctx)
-			}
-		}
-	}()
 }
 
 func (p *Price) loadPrices(ctx context.Context, name string, client Client) {
@@ -72,29 +65,16 @@ func (p *Price) loadPrices(ctx context.Context, name string, client Client) {
 		zap.L().Error("error load price", zap.Error(err))
 		return
 	}
-
-	p.addPrices(prices)
-	zap.L().Debug(
-		"get prices",
+	p.storage.AddPrices(prices)
+	zap.L().Debug("get prices",
 		zap.String("exchange", name),
 		zap.Int("count", len(prices)),
 	)
+	p.notifyUpdate()
 }
 
-func (p *Price) savePrices(ctx context.Context) {
-	p.muPrices.Lock()
-	prices := p.prices
-	p.prices = make([]domain.SymbolPrice, 0, len(prices))
-	p.muPrices.Unlock()
-
-	if err := p.storage.SavePrices(ctx, prices); err != nil {
-		zap.L().Error("error save prices", zap.Error(err))
+func (p *Price) notifyUpdate() {
+	for _, subscribe := range p.subscribes {
+		go func(subscribe chan<- struct{}) { subscribe <- struct{}{} }(subscribe)
 	}
-	zap.L().Debug("saved prices", zap.Int("count", len(prices)))
-}
-
-func (p *Price) addPrices(prices []domain.SymbolPrice) {
-	p.muPrices.Lock()
-	defer p.muPrices.Unlock()
-	p.prices = append(p.prices, prices...)
 }

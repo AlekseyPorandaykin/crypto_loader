@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventServiceClient interface {
 	Prices(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*SymbolPrices, error)
+	TickerPrices(ctx context.Context, in *DurationSeconds, opts ...grpc.CallOption) (EventService_TickerPricesClient, error)
 }
 
 type eventServiceClient struct {
@@ -42,11 +43,44 @@ func (c *eventServiceClient) Prices(ctx context.Context, in *EmptyRequest, opts 
 	return out, nil
 }
 
+func (c *eventServiceClient) TickerPrices(ctx context.Context, in *DurationSeconds, opts ...grpc.CallOption) (EventService_TickerPricesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &EventService_ServiceDesc.Streams[0], "/event.EventService/TickerPrices", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &eventServiceTickerPricesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type EventService_TickerPricesClient interface {
+	Recv() (*SymbolPrices, error)
+	grpc.ClientStream
+}
+
+type eventServiceTickerPricesClient struct {
+	grpc.ClientStream
+}
+
+func (x *eventServiceTickerPricesClient) Recv() (*SymbolPrices, error) {
+	m := new(SymbolPrices)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // EventServiceServer is the server API for EventService service.
 // All implementations must embed UnimplementedEventServiceServer
 // for forward compatibility
 type EventServiceServer interface {
 	Prices(context.Context, *EmptyRequest) (*SymbolPrices, error)
+	TickerPrices(*DurationSeconds, EventService_TickerPricesServer) error
 	mustEmbedUnimplementedEventServiceServer()
 }
 
@@ -56,6 +90,9 @@ type UnimplementedEventServiceServer struct {
 
 func (UnimplementedEventServiceServer) Prices(context.Context, *EmptyRequest) (*SymbolPrices, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Prices not implemented")
+}
+func (UnimplementedEventServiceServer) TickerPrices(*DurationSeconds, EventService_TickerPricesServer) error {
+	return status.Errorf(codes.Unimplemented, "method TickerPrices not implemented")
 }
 func (UnimplementedEventServiceServer) mustEmbedUnimplementedEventServiceServer() {}
 
@@ -88,6 +125,27 @@ func _EventService_Prices_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EventService_TickerPrices_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DurationSeconds)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(EventServiceServer).TickerPrices(m, &eventServiceTickerPricesServer{stream})
+}
+
+type EventService_TickerPricesServer interface {
+	Send(*SymbolPrices) error
+	grpc.ServerStream
+}
+
+type eventServiceTickerPricesServer struct {
+	grpc.ServerStream
+}
+
+func (x *eventServiceTickerPricesServer) Send(m *SymbolPrices) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // EventService_ServiceDesc is the grpc.ServiceDesc for EventService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -100,6 +158,12 @@ var EventService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _EventService_Prices_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "TickerPrices",
+			Handler:       _EventService_TickerPrices_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/grpc/EventService.proto",
 }

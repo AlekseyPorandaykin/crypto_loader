@@ -6,6 +6,8 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/clients"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/loaders"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/repositories"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/server/grpc"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/server/http"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bitget"
@@ -15,7 +17,9 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kucoin"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/mexc"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/okx"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 	"os/signal"
 	"syscall"
 	"time"
@@ -25,7 +29,7 @@ var priceCmd = &cobra.Command{
 	Use:   "price",
 	Short: "Load prices from external sources",
 	Run: func(cmd *cobra.Command, args []string) {
-		const defaultDurationRequest = time.Minute
+		const defaultDurationRequest = 5 * time.Second
 
 		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer cancel()
@@ -91,7 +95,9 @@ var priceCmd = &cobra.Command{
 		priceRepo := repositories.NewPriceRepository(db)
 		//Storage
 		priceStorage := storage.NewPriceStorage(priceRepo, cacheDir)
+
 		//Application
+
 		priceLoader := loaders.NewPrice(priceStorage)
 		priceLoader.AddClient("binance", clients.NewBinance(binanceClient))
 		priceLoader.AddClient("byBit", clients.NewByBit(byBitClient))
@@ -102,7 +108,27 @@ var priceCmd = &cobra.Command{
 		priceLoader.AddClient("bitget", clients.NewBitget(bitgetClient))
 		priceLoader.AddClient("mexc", clients.NewMexc(mexcClient))
 
+		//Servers
+		servHTTP := http.NewServer(":8080", priceStorage)
+		defer servHTTP.Close()
+
+		servGrpc := grpc.NewServer(priceStorage, ":50052")
+		defer servGrpc.Close()
+
+		//Runs
+		go priceStorage.Run(ctx)
 		go priceLoader.Run(ctx, defaultDurationRequest)
+		go func() {
+			defer cancel()
+			if err := servHTTP.Run(); err != nil && !errors.Is(err, context.Canceled) {
+				zap.L().Error("failed start serve", zap.Error(err))
+			}
+		}()
+		go func() {
+			if err := servGrpc.Start(); err != nil && !errors.Is(err, context.Canceled) {
+				zap.L().Error("failed start serve", zap.Error(err))
+			}
+		}()
 
 		<-ctx.Done()
 	},

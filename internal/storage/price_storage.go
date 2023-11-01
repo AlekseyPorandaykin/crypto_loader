@@ -2,63 +2,96 @@ package storage
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/repositories"
-	"github.com/VictoriaMetrics/fastcache"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"path"
+	"sync"
+	"time"
 )
 
 var _ domain.PriceStorage = (*PriceStorage)(nil)
 
-var keyPriceStorage = []byte("price_cache")
-
 type PriceStorage struct {
 	repo       domain.PriceStorage
-	cache      *fastcache.Cache
 	pathToFile string
+
+	muPrices   sync.Mutex
+	prices     []domain.SymbolPrice
+	lastPrices map[string]domain.SymbolPrice
 }
 
-func NewPriceStorage(repo *repositories.PriceRepository, pathToDir string) domain.PriceStorage {
+func NewPriceStorage(repo *repositories.PriceRepository, pathToDir string) *PriceStorage {
 	pathToFile := path.Join(pathToDir, "symbol_prices")
-	cache := fastcache.LoadFromFileOrNew(pathToFile, 1024*1024*500)
-	return &PriceStorage{repo: repo, cache: cache, pathToFile: pathToFile}
+	return &PriceStorage{
+		repo:       repo,
+		pathToFile: pathToFile,
+		lastPrices: make(map[string]domain.SymbolPrice),
+	}
 }
 
-func (p *PriceStorage) SavePrices(ctx context.Context, prices []domain.SymbolPrice) error {
-	if err := p.repo.SavePrices(ctx, prices); err != nil {
-		return errors.Wrap(err, "save prices int repository")
+func (p *PriceStorage) Run(ctx context.Context) {
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			p.UpdatePrices(ctx)
+		}
 	}
-	if err := p.saveLastPrices(p.filterLastPrices(prices)); err != nil {
-		return errors.Wrap(err, "save last price in cache")
+}
+
+func (p *PriceStorage) UpdatePrices(ctx context.Context) {
+	p.muPrices.Lock()
+	prices := p.prices
+	p.prices = make([]domain.SymbolPrice, 0, len(prices))
+	p.muPrices.Unlock()
+
+	if err := p.repo.SavePrices(ctx, p.filterLastPrices(prices)); err != nil {
+		zap.L().Error("error save prices", zap.Error(err))
+	}
+	zap.L().Debug("saved prices", zap.Int("count", len(prices)))
+}
+
+func (p *PriceStorage) AddPrices(prices []domain.SymbolPrice) {
+	p.muPrices.Lock()
+	p.prices = append(p.prices, prices...)
+	defer p.muPrices.Unlock()
+
+	for _, price := range prices {
+		key := fmt.Sprintf("%s-%s", price.Exchange, price.Symbol)
+		p.lastPrices[key] = price
+	}
+}
+func (p *PriceStorage) SavePrices(ctx context.Context, prices []domain.SymbolPrice) error {
+	p.AddPrices(prices)
+	if err := p.repo.SavePrices(ctx, prices); err != nil {
+		zap.L().Error("save prices", zap.Error(err))
 	}
 	return nil
 }
 
 func (p *PriceStorage) LastPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	var symbolPrices []domain.SymbolPrice
-	cache := fastcache.LoadFromFileOrNew(p.pathToFile, 1024*1024*500)
-	lpCache := cache.GetBig(nil, keyPriceStorage)
-	if lpCache != nil {
-		if err := json.Unmarshal(lpCache, &symbolPrices); err != nil {
-			zap.L().Error("error unmarshal symbolPrices from cache", zap.Error(err))
-		}
-		if len(symbolPrices) > 0 {
-			return symbolPrices, nil
-		}
+	p.muPrices.Lock()
+	prices := p.lastPrices
+	p.muPrices.Unlock()
+	for _, lp := range prices {
+		symbolPrices = append(symbolPrices, lp)
 	}
-	symbolPrices, err := p.repo.LastPrices(context.TODO())
+	if len(symbolPrices) > 0 {
+		return symbolPrices, nil
+	}
+	symbolPrices, err := p.repo.LastPrices(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "get last prices")
 	}
-	uniqPrices := p.filterLastPrices(symbolPrices)
-	if err := p.saveLastPrices(uniqPrices); err != nil {
-		return nil, errors.Wrap(err, "save last price in cache")
-	}
-	return uniqPrices, nil
+	return symbolPrices, nil
 }
 
 func (p *PriceStorage) filterLastPrices(prices []domain.SymbolPrice) []domain.SymbolPrice {
@@ -80,16 +113,4 @@ func (p *PriceStorage) filterLastPrices(prices []domain.SymbolPrice) []domain.Sy
 		result = append(result, val)
 	}
 	return result
-}
-
-func (p *PriceStorage) saveLastPrices(prices []domain.SymbolPrice) error {
-	data, err := json.Marshal(prices)
-	if err != nil {
-		return errors.Wrap(err, "Marshal prices")
-	}
-	p.cache.SetBig(keyPriceStorage, data)
-	if err := p.cache.SaveToFile(p.pathToFile); err != nil {
-		return errors.Wrap(err, "save cache to file")
-	}
-	return nil
 }

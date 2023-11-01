@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"strconv"
+	"time"
 )
 
 type handler struct {
@@ -40,4 +41,37 @@ func (h *handler) Prices(ctx context.Context, req *specification.EmptyRequest) (
 		})
 	}
 	return &specification.SymbolPrices{Prices: prices}, nil
+}
+
+func (h *handler) TickerPrices(req *specification.DurationSeconds, stream specification.EventService_TickerPricesServer) error {
+	ticker := time.NewTicker(time.Duration(req.GetSecond()) * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-stream.Context().Done():
+			return stream.Context().Err()
+		case <-ticker.C:
+			sp, err := h.priceStorage.LastPrices(stream.Context())
+			if err != nil {
+				return err
+			}
+			prices := make([]*specification.SymbolPrice, 0, len(sp))
+			for _, item := range sp {
+				price, err := strconv.ParseFloat(item.Price, 32)
+				if err != nil {
+					zap.L().Error("parse parse", zap.Error(err))
+					continue
+				}
+				prices = append(prices, &specification.SymbolPrice{
+					Exchange: item.Exchange,
+					Symbol:   item.Symbol,
+					Price:    float32(price),
+					Date:     timestamppb.New(item.Date),
+				})
+			}
+			if err := stream.Send(&specification.SymbolPrices{Prices: prices}); err != nil {
+				return err
+			}
+		}
+	}
 }
