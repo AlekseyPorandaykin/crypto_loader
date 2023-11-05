@@ -59,6 +59,7 @@ func (p *PriceStorage) UpdatePrices(ctx context.Context) {
 }
 
 func (p *PriceStorage) AddPrices(prices []domain.SymbolPrice) {
+	prices = p.mutatePrice(prices)
 	p.muPrices.Lock()
 	p.prices = append(p.prices, prices...)
 	defer p.muPrices.Unlock()
@@ -70,7 +71,7 @@ func (p *PriceStorage) AddPrices(prices []domain.SymbolPrice) {
 }
 func (p *PriceStorage) SavePrices(ctx context.Context, prices []domain.SymbolPrice) error {
 	p.AddPrices(prices)
-	if err := p.repo.SavePrices(ctx, prices); err != nil {
+	if err := p.repo.SavePrices(ctx, p.mutatePrice(prices)); err != nil {
 		zap.L().Error("save prices", zap.Error(err))
 	}
 	return nil
@@ -79,11 +80,10 @@ func (p *PriceStorage) SavePrices(ctx context.Context, prices []domain.SymbolPri
 func (p *PriceStorage) LastPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	var symbolPrices []domain.SymbolPrice
 	p.muPrices.Lock()
-	prices := p.lastPrices
-	p.muPrices.Unlock()
-	for _, lp := range prices {
+	for _, lp := range p.lastPrices {
 		symbolPrices = append(symbolPrices, lp)
 	}
+	p.muPrices.Unlock()
 	if len(symbolPrices) > 0 {
 		return symbolPrices, nil
 	}
@@ -112,5 +112,16 @@ func (p *PriceStorage) filterLastPrices(prices []domain.SymbolPrice) []domain.Sy
 	for _, val := range uniq {
 		result = append(result, val)
 	}
+	return result
+}
+
+func (p *PriceStorage) mutatePrice(data []domain.SymbolPrice) []domain.SymbolPrice {
+	result := make([]domain.SymbolPrice, 0, len(data))
+	for _, item := range data {
+		price := item
+		price.Date = price.Date.In(time.UTC)
+		result = append(result, price)
+	}
+
 	return result
 }

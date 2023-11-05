@@ -1,4 +1,6 @@
-CREATE TABLE IF NOT EXISTS prices
+CREATE SCHEMA IF NOT EXISTS crypto_loader;
+
+CREATE TABLE IF NOT EXISTS crypto_loader.prices
 (
     price      VARCHAR(50) NOT NULL,
     symbol     VARCHAR(50) NOT NULL,
@@ -7,10 +9,10 @@ CREATE TABLE IF NOT EXISTS prices
     updated_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX ON prices (symbol, exchange);
+CREATE UNIQUE INDEX ON crypto_loader.prices (symbol, exchange);
 
-CREATE INDEX exchange_idx ON prices (exchange);
-CREATE INDEX symbol_idx ON prices (symbol);
+CREATE INDEX exchange_idx ON crypto_loader.prices (exchange);
+CREATE INDEX symbol_idx ON crypto_loader.prices (symbol);
 
-alter table prices
-    owner to crypto_loader;
+alter table crypto_loader.prices
+    owner to crypto_app;

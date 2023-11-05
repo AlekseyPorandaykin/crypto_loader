@@ -39,7 +39,7 @@ func (repo *PriceRepository) SavePrices(ctx context.Context, prices []domain.Sym
 		)
 	}
 	query := fmt.Sprintf(
-		"INSERT INTO prices(price, symbol,exchange,datetime) VALUES %s ON CONFLICT (symbol, exchange) DO UPDATE SET price=EXCLUDED.price, datetime=EXCLUDED.datetime, updated_at=NOW()",
+		"INSERT INTO crypto_loader.prices(price, symbol,exchange,datetime) VALUES %s ON CONFLICT (symbol, exchange) DO UPDATE SET price=EXCLUDED.price, datetime=EXCLUDED.datetime, updated_at=NOW()",
 		strings.Join(values, ", "),
 	)
 	_, err := repo.db.ExecContext(ctx, query)
@@ -52,7 +52,7 @@ func (repo *PriceRepository) SavePrices(ctx context.Context, prices []domain.Sym
 func (repo *PriceRepository) LastPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	var (
 		prices = make([]domain.SymbolPrice, 0, 300_000)
-		query  = `SELECT * FROM prices ORDER BY datetime`
+		query  = `SELECT * FROM crypto_loader.prices ORDER BY datetime`
 	)
 	if err := repo.db.SelectContext(ctx, &prices, query); err != nil {
 		return nil, err
