@@ -19,11 +19,16 @@ message SymbolPrices{
 
 message EmptyRequest {}
 
+message SymbolPriceRequest {
+  string Symbol = 1;
+}
+
 message DurationSeconds{
   int64 second = 1;
 }
 
 service EventService {
   rpc Prices(EmptyRequest) returns (SymbolPrices);
+  rpc SymbolPrice(SymbolPriceRequest) returns (SymbolPrices);
   rpc TickerPrices(DurationSeconds) returns(stream SymbolPrices);
 }

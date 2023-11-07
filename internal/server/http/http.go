@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/labstack/echo/v4"
 	"net/http"
@@ -24,6 +25,17 @@ func NewServer(host string, priceStorage domain.PriceStorage) *Server {
 func (s *Server) Run() error {
 	s.e.GET("/prices", func(c echo.Context) error {
 		prices, err := s.priceStorage.LastPrices(c.Request().Context())
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, prices)
+	})
+	s.e.GET("/price/:symbol", func(c echo.Context) error {
+		symbol := c.Param("symbol")
+		if symbol == "" {
+			return errors.New("empty symbol")
+		}
+		prices, err := s.priceStorage.SymbolPrice(c.Request().Context(), symbol)
 		if err != nil {
 			return err
 		}

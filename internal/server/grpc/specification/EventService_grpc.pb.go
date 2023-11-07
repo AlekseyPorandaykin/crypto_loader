@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventServiceClient interface {
 	Prices(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*SymbolPrices, error)
+	SymbolPrice(ctx context.Context, in *SymbolPriceRequest, opts ...grpc.CallOption) (*SymbolPrices, error)
 	TickerPrices(ctx context.Context, in *DurationSeconds, opts ...grpc.CallOption) (EventService_TickerPricesClient, error)
 }
 
@@ -37,6 +38,15 @@ func NewEventServiceClient(cc grpc.ClientConnInterface) EventServiceClient {
 func (c *eventServiceClient) Prices(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*SymbolPrices, error) {
 	out := new(SymbolPrices)
 	err := c.cc.Invoke(ctx, "/event.EventService/Prices", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *eventServiceClient) SymbolPrice(ctx context.Context, in *SymbolPriceRequest, opts ...grpc.CallOption) (*SymbolPrices, error) {
+	out := new(SymbolPrices)
+	err := c.cc.Invoke(ctx, "/event.EventService/SymbolPrice", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +90,7 @@ func (x *eventServiceTickerPricesClient) Recv() (*SymbolPrices, error) {
 // for forward compatibility
 type EventServiceServer interface {
 	Prices(context.Context, *EmptyRequest) (*SymbolPrices, error)
+	SymbolPrice(context.Context, *SymbolPriceRequest) (*SymbolPrices, error)
 	TickerPrices(*DurationSeconds, EventService_TickerPricesServer) error
 	mustEmbedUnimplementedEventServiceServer()
 }
@@ -90,6 +101,9 @@ type UnimplementedEventServiceServer struct {
 
 func (UnimplementedEventServiceServer) Prices(context.Context, *EmptyRequest) (*SymbolPrices, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Prices not implemented")
+}
+func (UnimplementedEventServiceServer) SymbolPrice(context.Context, *SymbolPriceRequest) (*SymbolPrices, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SymbolPrice not implemented")
 }
 func (UnimplementedEventServiceServer) TickerPrices(*DurationSeconds, EventService_TickerPricesServer) error {
 	return status.Errorf(codes.Unimplemented, "method TickerPrices not implemented")
@@ -125,6 +139,24 @@ func _EventService_Prices_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EventService_SymbolPrice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SymbolPriceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EventServiceServer).SymbolPrice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/event.EventService/SymbolPrice",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EventServiceServer).SymbolPrice(ctx, req.(*SymbolPriceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _EventService_TickerPrices_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(DurationSeconds)
 	if err := stream.RecvMsg(m); err != nil {
@@ -156,6 +188,10 @@ var EventService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Prices",
 			Handler:    _EventService_Prices_Handler,
+		},
+		{
+			MethodName: "SymbolPrice",
+			Handler:    _EventService_SymbolPrice_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -75,3 +75,25 @@ func (h *handler) TickerPrices(req *specification.DurationSeconds, stream specif
 		}
 	}
 }
+
+func (h *handler) SymbolPrice(ctx context.Context, req *specification.SymbolPriceRequest) (*specification.SymbolPrices, error) {
+	sp, err := h.priceStorage.SymbolPrice(ctx, req.GetSymbol())
+	if err != nil {
+		return nil, err
+	}
+	prices := make([]*specification.SymbolPrice, 0, len(sp))
+	for _, item := range sp {
+		price, err := strconv.ParseFloat(item.Price, 32)
+		if err != nil {
+			zap.L().Error("parse parse", zap.Error(err))
+			continue
+		}
+		prices = append(prices, &specification.SymbolPrice{
+			Exchange: item.Exchange,
+			Symbol:   item.Symbol,
+			Price:    float32(price),
+			Date:     timestamppb.New(item.Date),
+		})
+	}
+	return &specification.SymbolPrices{Prices: prices}, nil
+}

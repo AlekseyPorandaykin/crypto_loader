@@ -94,6 +94,25 @@ func (p *PriceStorage) LastPrices(ctx context.Context) ([]domain.SymbolPrice, er
 	return symbolPrices, nil
 }
 
+func (p *PriceStorage) SymbolPrice(ctx context.Context, symbol string) ([]domain.SymbolPrice, error) {
+	var symbolPrices []domain.SymbolPrice
+	p.muPrices.Lock()
+	for _, lp := range p.lastPrices {
+		if lp.Symbol == symbol {
+			symbolPrices = append(symbolPrices, lp)
+		}
+	}
+	p.muPrices.Unlock()
+	if len(symbolPrices) > 0 {
+		return symbolPrices, nil
+	}
+	symbolPrices, err := p.repo.SymbolPrice(ctx, symbol)
+	if err != nil {
+		return nil, errors.Wrap(err, "get symbol prices")
+	}
+	return symbolPrices, nil
+}
+
 func (p *PriceStorage) filterLastPrices(prices []domain.SymbolPrice) []domain.SymbolPrice {
 	uniq := make(map[string]domain.SymbolPrice)
 	for _, price := range prices {

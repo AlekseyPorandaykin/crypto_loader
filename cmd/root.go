@@ -113,7 +113,7 @@ var rootCmd = &cobra.Command{
 		priceLoader.AddClient("mexc", clients.NewMexc(mexcClient))
 
 		//Servers
-		servHTTP := http.NewServer(":8080", priceStorage)
+		servHTTP := http.NewServer(":8081", priceStorage)
 		defer servHTTP.Close()
 
 		servGrpc := grpc.NewServer(priceStorage, ":50052")
