@@ -65,7 +65,7 @@ func (h *handler) TickerPrices(req *specification.DurationSeconds, stream specif
 			for _, item := range sp {
 				price, err := strconv.ParseFloat(item.Price, 32)
 				if err != nil {
-					zap.L().Error("parse price",
+					zap.L().Debug("parse price",
 						zap.Error(err),
 						zap.String("price", item.Price),
 						zap.String("symbol", item.Symbol),
