@@ -7,7 +7,6 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/repositories"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"path"
 	"sync"
 	"time"
 )
@@ -15,19 +14,16 @@ import (
 var _ domain.PriceStorage = (*PriceStorage)(nil)
 
 type PriceStorage struct {
-	repo       domain.PriceStorage
-	pathToFile string
+	repo domain.PriceStorage
 
 	muPrices   sync.Mutex
 	prices     []domain.SymbolPrice
 	lastPrices map[string]domain.SymbolPrice
 }
 
-func NewPriceStorage(repo *repositories.PriceRepository, pathToDir string) *PriceStorage {
-	pathToFile := path.Join(pathToDir, "symbol_prices")
+func NewPriceStorage(repo *repositories.PriceRepository) *PriceStorage {
 	return &PriceStorage{
 		repo:       repo,
-		pathToFile: pathToFile,
 		lastPrices: make(map[string]domain.SymbolPrice),
 	}
 }

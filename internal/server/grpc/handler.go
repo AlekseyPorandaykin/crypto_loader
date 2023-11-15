@@ -30,7 +30,13 @@ func (h *handler) Prices(ctx context.Context, req *specification.EmptyRequest) (
 	for _, item := range sp {
 		price, err := strconv.ParseFloat(item.Price, 32)
 		if err != nil {
-			zap.L().Error("parse parse", zap.Error(err))
+			zap.L().Error(
+				"parse price",
+				zap.Error(err),
+				zap.String("price", item.Price),
+				zap.String("symbol", item.Symbol),
+				zap.String("exchange", item.Exchange),
+			)
 			continue
 		}
 		prices = append(prices, &specification.SymbolPrice{
@@ -59,7 +65,11 @@ func (h *handler) TickerPrices(req *specification.DurationSeconds, stream specif
 			for _, item := range sp {
 				price, err := strconv.ParseFloat(item.Price, 32)
 				if err != nil {
-					zap.L().Error("parse parse", zap.Error(err))
+					zap.L().Error("parse price",
+						zap.Error(err),
+						zap.String("price", item.Price),
+						zap.String("symbol", item.Symbol),
+						zap.String("exchange", item.Exchange))
 					continue
 				}
 				prices = append(prices, &specification.SymbolPrice{
@@ -85,7 +95,11 @@ func (h *handler) SymbolPrice(ctx context.Context, req *specification.SymbolPric
 	for _, item := range sp {
 		price, err := strconv.ParseFloat(item.Price, 32)
 		if err != nil {
-			zap.L().Error("parse parse", zap.Error(err))
+			zap.L().Error("parse price",
+				zap.Error(err),
+				zap.String("price", item.Price),
+				zap.String("symbol", item.Symbol),
+				zap.String("exchange", item.Exchange))
 			continue
 		}
 		prices = append(prices, &specification.SymbolPrice{
