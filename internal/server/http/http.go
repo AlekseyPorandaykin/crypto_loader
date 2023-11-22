@@ -4,6 +4,8 @@ import (
 	"errors"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 )
 
@@ -23,6 +25,8 @@ func NewServer(host string, priceStorage domain.PriceStorage) *Server {
 }
 
 func (s *Server) Run() error {
+	s.e.Use(middleware.Recover())
+	s.e.Use(middleware.CORS())
 	s.e.GET("/prices", func(c echo.Context) error {
 		prices, err := s.priceStorage.LastPrices(c.Request().Context())
 		if err != nil {
@@ -41,6 +45,7 @@ func (s *Server) Run() error {
 		}
 		return c.JSON(http.StatusOK, prices)
 	})
+	promhttp.Handler()
 	return s.e.Start(s.host)
 }
 

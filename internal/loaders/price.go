@@ -3,6 +3,7 @@ package loaders
 import (
 	"context"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/metric"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
 	"go.uber.org/zap"
 	"sync"
@@ -20,8 +21,6 @@ type Price struct {
 	prices   []domain.SymbolPrice
 
 	storage *storage.PriceStorage
-
-	subscribes []chan<- struct{}
 }
 
 func NewPrice(storage *storage.PriceStorage) *Price {
@@ -34,10 +33,6 @@ func NewPrice(storage *storage.PriceStorage) *Price {
 
 func (p *Price) AddClient(name string, client Client) {
 	p.clients[name] = client
-}
-
-func (p *Price) AddSubscribe(s chan<- struct{}) {
-	p.subscribes = append(p.subscribes, s)
 }
 
 func (p *Price) Run(ctx context.Context, d time.Duration) {
@@ -60,21 +55,14 @@ func (p *Price) Run(ctx context.Context, d time.Duration) {
 }
 
 func (p *Price) loadPrices(ctx context.Context, name string, client Client) {
+	start := time.Now()
 	prices, err := client.Load(ctx)
 	if err != nil {
+		metric.Errors.WithLabelValues("load_prices", name).Inc()
 		zap.L().Error("error load price", zap.Error(err))
 		return
 	}
+	metric.PriceLoadDuration.WithLabelValues(name).Add(float64(time.Since(start).Milliseconds()))
+	metric.PriceLoaded.WithLabelValues(name).Add(float64(len(prices)))
 	p.storage.AddPrices(prices)
-	zap.L().Debug("get prices",
-		zap.String("exchange", name),
-		zap.Int("count", len(prices)),
-	)
-	p.notifyUpdate()
-}
-
-func (p *Price) notifyUpdate() {
-	for _, subscribe := range p.subscribes {
-		go func(subscribe chan<- struct{}) { subscribe <- struct{}{} }(subscribe)
-	}
 }

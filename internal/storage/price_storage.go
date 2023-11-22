@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/metric"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/repositories"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -51,7 +52,7 @@ func (p *PriceStorage) UpdatePrices(ctx context.Context) {
 	if err := p.repo.SavePrices(ctx, p.filterLastPrices(prices)); err != nil {
 		zap.L().Error("error save prices", zap.Error(err))
 	}
-	zap.L().Debug("saved prices", zap.Int("count", len(prices)))
+	metric.PriceSaved.Add(float64(len(prices)))
 }
 
 func (p *PriceStorage) AddPrices(prices []domain.SymbolPrice) {

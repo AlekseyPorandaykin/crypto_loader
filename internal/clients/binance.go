@@ -4,22 +4,23 @@ import (
 	"context"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance"
+	domain2 "github.com/AlekseyPorandaykin/crypto_loader/pkg/binance/domain"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 	"time"
 )
 
 type Binance struct {
-	client *binance.Client
+	client *binance.Manager
 }
 
-func NewBinance(client *binance.Client) *Binance {
+func NewBinance(client *binance.Manager) *Binance {
 	return &Binance{client: client}
 }
 
 func (c *Binance) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
 	result := make([]domain.SymbolPrice, 0, 2500)
-	var binancePrices []binance.PriceSymbol
+	var binancePrices []domain2.PriceSymbolDTO
 	err := backoff.Retry(func() error {
 		var err error
 		binancePrices, err = c.client.GetPrice(ctx)

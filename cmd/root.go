@@ -9,9 +9,10 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/loaders"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/repositories"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/server/grpc"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/server/http"
+	http_server "github.com/AlekseyPorandaykin/crypto_loader/internal/server/http"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance/sender"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bitget"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/gateio"
@@ -19,8 +20,10 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kucoin"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/mexc"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/okx"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+	"net/http"
 	"os/signal"
 	"syscall"
 )
@@ -35,11 +38,13 @@ var rootCmd = &cobra.Command{
 		conf := config.Create()
 
 		//Clients
-		binanceClient, err := binance.NewClient(conf.BinanceHost)
+		binanceClient, err := binance.NewManager(conf.BinanceSpotHost, conf.BinanceFutureHost)
 		if err != nil {
 			fmt.Println("Error init binanceClient: ", err.Error())
 			return
 		}
+		defer binanceClient.Close()
+		binanceClient.WithSender(sender.NewLogger(zap.L(), sender.NewBasic()))
 		byBitClient, err := bybit.NewClient(conf.BybitHost)
 		if err != nil {
 			fmt.Println("Error init byBitClient: ", err.Error())
@@ -102,7 +107,7 @@ var rootCmd = &cobra.Command{
 		priceLoader.AddClient("mexc", clients.NewMexc(mexcClient))
 
 		//Servers
-		servHTTP := http.NewServer(conf.HttpAddr, priceStorage)
+		servHTTP := http_server.NewServer(conf.HttpAddr, priceStorage)
 		defer servHTTP.Close()
 
 		servGrpc := grpc.NewServer(priceStorage, conf.GrpcAddr)
@@ -120,7 +125,14 @@ var rootCmd = &cobra.Command{
 		go func() {
 			defer cancel()
 			if err := servGrpc.Start(); err != nil && !errors.Is(err, context.Canceled) {
-				zap.L().Error("failed start serve", zap.Error(err))
+				zap.L().Error("failed start server", zap.Error(err))
+			}
+		}()
+		go func() {
+			defer cancel()
+			http.Handle("/metrics", promhttp.Handler())
+			if err := http.ListenAndServe(conf.MetricAddr, nil); err != nil {
+				zap.L().Error("failed start metrics", zap.Error(err))
 			}
 		}()
 
