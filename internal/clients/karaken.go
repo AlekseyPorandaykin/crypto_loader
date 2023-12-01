@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/dto"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kraken"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
@@ -48,4 +49,8 @@ func (c *Kraken) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
 		})
 	}
 	return result, nil
+}
+
+func (c *Kraken) CreateFutureOrder(cred domain.ExchangeCredential, order domain.FutureOrder) ([]dto.OrderDTO, error) {
+	return nil, nil
 }

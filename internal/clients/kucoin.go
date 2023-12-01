@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/dto"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kucoin"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
@@ -51,4 +52,8 @@ func (c *Kucoin) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
 		})
 	}
 	return result, nil
+}
+
+func (c *Kucoin) CreateFutureOrder(cred domain.ExchangeCredential, order domain.FutureOrder) ([]dto.OrderDTO, error) {
+	return nil, nil
 }

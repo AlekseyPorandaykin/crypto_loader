@@ -85,17 +85,106 @@ func (m *Manager) FuturesSymbolPriceTicker(ctx context.Context) error {
 	return nil
 }
 
-func (m *Manager) FuturesNewOrder(cred domain.CredentialDTO, order domain.FutureOrder) error {
+func (m *Manager) FuturesNewOrder(cred domain.CredentialDTO, order domain.FutureOrder) (domain.ResponseOrderDTO, error) {
+	var orderRep domain.ResponseOrderDTO
 	req, weight, err := m.futureRequest.NewOrder(cred.APIKey, cred.ApiSecret, order)
 	if err != nil {
-		return err
+		return domain.ResponseOrderDTO{}, err
 	}
-	_, err = m.sendPersonalRequest(cred, req, weight)
+	data, err := m.sendPersonalRequest(cred, req, weight)
 	if err != nil {
-		return err
+		return domain.ResponseOrderDTO{}, err
+	}
+	if err := json.Unmarshal(data, &orderRep); err != nil {
+		return domain.ResponseOrderDTO{}, err
 	}
 
-	return nil
+	return orderRep, nil
+}
+
+func (m *Manager) FuturesExchangeInformation(ctx context.Context) ([]byte, error) {
+	req, weight, err := m.futureRequest.ExchangeInformation(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return m.sendRequest(req, weight)
+}
+
+func (m *Manager) FuturesQueryIndexPriceConstituents(ctx context.Context, symbol string) ([]byte, error) {
+	req, weight, err := m.futureRequest.QueryIndexPriceConstituents(ctx, symbol)
+	if err != nil {
+		return nil, err
+	}
+
+	return m.sendRequest(req, weight)
+}
+
+func (m *Manager) FuturesPlaceMultipleOrders(
+	cred domain.CredentialDTO, orders []domain.FutureOrder,
+) ([]domain.ResponseOrderDTO, error) {
+	req, weight, err := m.futureRequest.PlaceMultipleOrders(cred.APIKey, cred.ApiSecret, orders)
+	if err != nil {
+		return nil, err
+	}
+	data, err := m.sendPersonalRequest(cred, req, weight)
+	if err != nil {
+		return nil, err
+	}
+	ordersRep := make([]domain.ResponseOrderDTO, 0, len(orders))
+	if err := json.Unmarshal(data, &ordersRep); err != nil {
+		return nil, err
+	}
+
+	return ordersRep, nil
+}
+
+func (m *Manager) FutureChangeInitialLeverage(
+	cred domain.CredentialDTO, symbol string, leverage int,
+) (domain.LeverageDTO, error) {
+	req, weight, err := m.futureRequest.ChangeInitialLeverage(cred.APIKey, cred.ApiSecret, symbol, leverage)
+	if err != nil {
+		return domain.LeverageDTO{}, err
+	}
+	data, err := m.sendPersonalRequest(cred, req, weight)
+	if err != nil {
+		return domain.LeverageDTO{}, err
+	}
+	var resp domain.LeverageDTO
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return domain.LeverageDTO{}, err
+	}
+	return resp, nil
+}
+
+func (m *Manager) FutureQueryOrder(
+	ctx context.Context, cred domain.CredentialDTO, symbol string, orderID int,
+) (domain.ResponseOrderDTO, error) {
+	req, weight, err := m.futureRequest.QueryOrder(ctx, cred.APIKey, cred.ApiSecret, symbol, orderID)
+	if err != nil {
+		return domain.ResponseOrderDTO{}, err
+	}
+	data, err := m.sendPersonalRequest(cred, req, weight)
+	if err != nil {
+		return domain.ResponseOrderDTO{}, err
+	}
+	var orderRep domain.ResponseOrderDTO
+	if err := json.Unmarshal(data, &orderRep); err != nil {
+		return domain.ResponseOrderDTO{}, err
+	}
+	return orderRep, nil
+}
+
+func (m *Manager) FutureCancelMultipleOrders(cred domain.CredentialDTO, symbol string, orderIDs []int) (interface{}, error) {
+	req, weight, err := m.futureRequest.CancelMultipleOrders(cred.APIKey, cred.ApiSecret, symbol, orderIDs)
+	if err != nil {
+		return nil, err
+	}
+	data, err := m.sendPersonalRequest(cred, req, weight)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func (m *Manager) executeRequest(req *http.Request, weight int, err error) ([]byte, error) {

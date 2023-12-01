@@ -7,6 +7,7 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/clients"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/config"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/loaders"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/order"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/repositories"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/server/grpc"
 	http_server "github.com/AlekseyPorandaykin/crypto_loader/internal/server/http"
@@ -31,7 +32,6 @@ import (
 var rootCmd = &cobra.Command{
 	Use: "crypto-loader", Short: "Load prices from external sources",
 	Run: func(cmd *cobra.Command, args []string) {
-
 		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer cancel()
 
@@ -44,7 +44,7 @@ var rootCmd = &cobra.Command{
 			return
 		}
 		defer binanceClient.Close()
-		binanceClient.WithSender(sender.NewLogger(zap.L(), sender.NewBasic()))
+		binanceClient.WithSender(sender.NewBasic())
 		byBitClient, err := bybit.NewClient(conf.BybitHost)
 		if err != nil {
 			fmt.Println("Error init byBitClient: ", err.Error())
@@ -94,10 +94,13 @@ var rootCmd = &cobra.Command{
 		//Storage
 		priceStorage := storage.NewPriceStorage(priceRepo)
 
+		//Clients
+		binanceAdapter := clients.NewBinance(binanceClient)
+
 		//Application
 
 		priceLoader := loaders.NewPrice(priceStorage)
-		priceLoader.AddClient("binance", clients.NewBinance(binanceClient))
+		priceLoader.AddClient("binance", binanceAdapter)
 		priceLoader.AddClient("byBit", clients.NewByBit(byBitClient))
 		priceLoader.AddClient("kukoin", clients.NewKucoin(kukoinClient))
 		priceLoader.AddClient("okx", clients.NewOkx(okxClient))
@@ -106,8 +109,11 @@ var rootCmd = &cobra.Command{
 		priceLoader.AddClient("bitget", clients.NewBitget(bitgetClient))
 		priceLoader.AddClient("mexc", clients.NewMexc(mexcClient))
 
+		order := order.NewOrder()
+		order.AddExchange("binance", binanceAdapter)
+
 		//Servers
-		servHTTP := http_server.NewServer(conf.HttpAddr, priceStorage)
+		servHTTP := http_server.NewServer(conf.HttpAddr, priceStorage, order)
 		defer servHTTP.Close()
 
 		servGrpc := grpc.NewServer(priceStorage, conf.GrpcAddr)

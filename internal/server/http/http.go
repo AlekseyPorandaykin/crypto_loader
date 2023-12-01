@@ -3,9 +3,10 @@ package http
 import (
 	"errors"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/dto"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/order"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 )
 
@@ -13,12 +14,14 @@ type Server struct {
 	host         string
 	priceStorage domain.PriceStorage
 	e            *echo.Echo
+	order        *order.Order
 }
 
-func NewServer(host string, priceStorage domain.PriceStorage) *Server {
+func NewServer(host string, priceStorage domain.PriceStorage, order *order.Order) *Server {
 	return &Server{
 		host:         host,
 		priceStorage: priceStorage,
+		order:        order,
 
 		e: echo.New(),
 	}
@@ -45,7 +48,18 @@ func (s *Server) Run() error {
 		}
 		return c.JSON(http.StatusOK, prices)
 	})
-	promhttp.Handler()
+	s.e.POST("/order", func(c echo.Context) error {
+		req := dto.FutureOrderRequest{}
+		if err := (&echo.DefaultBinder{}).BindBody(c, &req); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
+		orders, err := s.order.CreateFutureOrder(req)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+
+		return c.JSON(http.StatusOK, orders)
+	})
 	return s.e.Start(s.host)
 }
 

@@ -40,10 +40,15 @@ func TestClient_Ping(t *testing.T) {
 	}
 	defer c.Close()
 	c.WithSender(sender.NewLogger(zap.L(), sender.NewBasic()))
-	c.FuturesNewOrder(
+	c.FutureQueryOrder(
+		context.TODO(),
 		domain.CredentialDTO{APIKey: apiKeyFuture, ApiSecret: apiSecretFuture},
-		domain.NewStopMarketFutureOrder("BTCUSDT", "BUY", 0.01, 37200),
-	)
+		"BTCUSDT",
+		3543846157)
+	c.FutureCancelMultipleOrders(
+		domain.CredentialDTO{APIKey: apiKeyFuture, ApiSecret: apiSecretFuture},
+		"BTCUSDT",
+		[]int{3543918994, 3543918996, 3543918995})
 }
 
 func saveToFile(data []byte) {
@@ -53,4 +58,57 @@ func saveToFile(data []byte) {
 	}
 	defer file.Close()
 	file.Write(data)
+}
+
+func TestManager_FuturesPlaceMultipleOrders(t *testing.T) {
+	c, err := NewManager("https://api.binance.com", "https://testnet.binancefuture.com")
+	if err != nil {
+		return
+	}
+	defer c.Close()
+	c.WithSender(sender.NewLogger(zap.L(), sender.NewBasic()))
+	order := domain.NewLimitFutureOrder(
+		"BTCUSDT",
+		domain.BuyOrderSide,
+		domain.GtcTimeInForce,
+		0.026,
+		38200,
+		false,
+	)
+	order.PositionSide = domain.BothPositionSide
+	_, err = c.FuturesNewOrder(
+		domain.CredentialDTO{APIKey: apiKeyFuture, ApiSecret: apiSecretFuture},
+		order,
+	)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	takeProfitOrder := domain.NewTakeProfitMarketFutureOrder(
+		"BTCUSDT", domain.SellOrderSide, 0.026, 38400, true,
+	)
+	takeProfitOrder.PositionSide = domain.BothPositionSide
+	takeProfitOrder.PriceProtect = true
+	takeProfitOrder.TimeInForce = domain.GtcTimeInForce
+	takeProfitOrder.WorkingType = domain.MarkPriceWorkingType
+
+	stopMarketOrder := domain.NewStopMarketFutureOrder(
+		"BTCUSDT", domain.SellOrderSide, 0.026, 38000, true,
+	)
+	stopMarketOrder.PositionSide = domain.BothPositionSide
+	stopMarketOrder.TimeInForce = domain.GtcTimeInForce
+	stopMarketOrder.WorkingType = domain.MarkPriceWorkingType
+	stopMarketOrder.PriceProtect = true
+
+	orders := make([]domain.FutureOrder, 0, 10)
+	orders = append(orders, takeProfitOrder, stopMarketOrder)
+	_, err = c.FuturesPlaceMultipleOrders(
+		domain.CredentialDTO{APIKey: apiKeyFuture, ApiSecret: apiSecretFuture},
+		orders,
+	)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
