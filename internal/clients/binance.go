@@ -8,6 +8,8 @@ import (
 	binance_domain "github.com/AlekseyPorandaykin/crypto_loader/pkg/binance/domain"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"strconv"
 	"time"
 )
 
@@ -115,4 +117,63 @@ func (c *Binance) CreateFutureOrder(cred domain.ExchangeCredential, order domain
 	}
 
 	return ordersCreated, nil
+}
+
+func (c *Binance) FutureCandlestickOneHour(ctx context.Context, symbol string) ([]domain.Candlestick, error) {
+	binanceCandlesticks, err := c.client.FutureCandlestickDataOneHour(ctx, symbol)
+	if err != nil {
+		return nil, errors.Wrap(err, "error get candlesticks from binance")
+	}
+	return c.convertCandlesticks(binanceCandlesticks, symbol, "1h"), err
+}
+func (c *Binance) FutureCandlestickFourHour(ctx context.Context, symbol string) ([]domain.Candlestick, error) {
+	binanceCandlesticks, err := c.client.FutureCandlestickDataFourHour(ctx, symbol)
+	if err != nil {
+		return nil, errors.Wrap(err, "error get candlesticks from binance")
+	}
+	return c.convertCandlesticks(binanceCandlesticks, symbol, "4h"), err
+}
+
+func (c *Binance) convertCandlesticks(
+	binanceCandlesticks []binance_domain.CandlestickBarDTO, symbol string, interval domain.CandlestickInterval,
+) []domain.Candlestick {
+	res := make([]domain.Candlestick, 0, len(binanceCandlesticks))
+	now := time.Now().In(time.UTC)
+	for _, binanceCandlestick := range binanceCandlesticks {
+		openPrice, err := strconv.ParseFloat(binanceCandlestick.OpenPrice, 64)
+		if err != nil {
+			zap.L().Error("error parse openPrice", zap.Error(err))
+		}
+		highPrice, err := strconv.ParseFloat(binanceCandlestick.HighPrice, 64)
+		if err != nil {
+			zap.L().Error("error parse highPrice", zap.Error(err))
+		}
+		lowPrice, err := strconv.ParseFloat(binanceCandlestick.LowPrice, 64)
+		if err != nil {
+			zap.L().Error("error parse lowPrice", zap.Error(err))
+		}
+		closePrice, err := strconv.ParseFloat(binanceCandlestick.ClosePrice, 64)
+		if err != nil {
+			zap.L().Error("error parse closePrice", zap.Error(err))
+		}
+		volume, err := strconv.ParseFloat(binanceCandlestick.Volume, 64)
+		if err != nil {
+			zap.L().Error("error parse volume", zap.Error(err))
+		}
+		res = append(res, domain.Candlestick{
+			Symbol:       symbol,
+			Exchange:     "binance",
+			OpenTime:     time.UnixMilli(int64(binanceCandlestick.OpenTime)).In(time.UTC),
+			CloseTime:    time.UnixMilli(int64(binanceCandlestick.CloseTime)).In(time.UTC),
+			OpenPrice:    openPrice,
+			HighPrice:    highPrice,
+			LowPrice:     lowPrice,
+			ClosePrice:   closePrice,
+			Volume:       volume,
+			NumberTrades: int(binanceCandlestick.NumberOfTrades),
+			Interval:     interval,
+			CreatedAt:    now,
+		})
+	}
+	return res
 }

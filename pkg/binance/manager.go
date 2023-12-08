@@ -187,6 +187,62 @@ func (m *Manager) FutureCancelMultipleOrders(cred domain.CredentialDTO, symbol s
 	return data, nil
 }
 
+func (m *Manager) FutureCandlestickDataOneHour(ctx context.Context, symbol string) ([]domain.CandlestickBarDTO, error) {
+	return m.FutureCandlestickData(ctx, symbol, domain.OneHourCandlestickInterval)
+}
+
+func (m *Manager) FutureCandlestickDataFourHour(ctx context.Context, symbol string) ([]domain.CandlestickBarDTO, error) {
+	return m.FutureCandlestickData(ctx, symbol, domain.FourHourCandlestickInterval)
+}
+
+func (m *Manager) FutureCandlestickData(ctx context.Context, symbol string, interval domain.CandlestickInterval) ([]domain.CandlestickBarDTO, error) {
+	req, weight, err := m.futureRequest.CandlestickData(ctx, symbol, interval)
+	if err != nil {
+		return nil, err
+	}
+	data, err := m.sendRequest(req, weight)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		candlesticks             [][]interface{}
+		candlestickBarCollection []domain.CandlestickBarDTO
+	)
+	if err := json.Unmarshal(data, &candlesticks); err != nil {
+		return nil, err
+	}
+	for _, candlestick := range candlesticks {
+		openTime, _ := candlestick[0].(float64)
+		openPrice, _ := candlestick[1].(string)
+		highPrice, _ := candlestick[2].(string)
+		lowPrice, _ := candlestick[3].(string)
+		closePrice, _ := candlestick[4].(string)
+		volume, _ := candlestick[5].(string)
+		closeTime, _ := candlestick[6].(float64)
+		quoteAssetVolume, _ := candlestick[7].(string)
+		numberOfTrades, _ := candlestick[8].(float64)
+		takerBuyBaseAssetVolume, _ := candlestick[9].(string)
+		takerBuyQuoteAssetVolume, _ := candlestick[10].(string)
+		ignore, _ := candlestick[11].(string)
+
+		candlestickBarCollection = append(candlestickBarCollection, domain.CandlestickBarDTO{
+			OpenTime:                 openTime,
+			OpenPrice:                openPrice,
+			HighPrice:                highPrice,
+			LowPrice:                 lowPrice,
+			ClosePrice:               closePrice,
+			Volume:                   volume,
+			CloseTime:                closeTime,
+			QuoteAssetVolume:         quoteAssetVolume,
+			NumberOfTrades:           numberOfTrades,
+			TakerBuyBaseAssetVolume:  takerBuyBaseAssetVolume,
+			TakerBuyQuoteAssetVolume: takerBuyQuoteAssetVolume,
+			Ignore:                   ignore,
+		})
+	}
+	return candlestickBarCollection, nil
+}
+
 func (m *Manager) executeRequest(req *http.Request, weight int, err error) ([]byte, error) {
 	if err != nil {
 		return nil, err

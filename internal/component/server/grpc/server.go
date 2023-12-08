@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/server/grpc/specification"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/server/grpc/specification"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc"
 	"net"

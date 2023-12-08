@@ -2,6 +2,7 @@ package order
 
 import (
 	"errors"
+	"fmt"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/dto"
 	"strings"
@@ -59,6 +60,11 @@ func (o *Order) CreateFutureOrder(orderReq dto.FutureOrderRequest) ([]dto.Create
 	for _, exCred := range orderReq.Exchanges {
 		exchange, has := o.exchanges[exCred.Exchange]
 		if !has {
+			orders = append(orders, dto.CreateOrderDTO{
+				SourceOrder: orderReq.FutureOrder,
+				Exchange:    exCred.Exchange,
+				Errors:      []error{errors.New(fmt.Sprintf("not found exchange: %s", exCred.Exchange))},
+			})
 			continue
 		}
 		createdOrders, err := exchange.CreateFutureOrder(
@@ -66,7 +72,12 @@ func (o *Order) CreateFutureOrder(orderReq dto.FutureOrderRequest) ([]dto.Create
 			newOrder,
 		)
 		if err != nil {
-			return nil, err
+			orders = append(orders, dto.CreateOrderDTO{
+				SourceOrder: orderReq.FutureOrder,
+				Exchange:    exCred.Exchange,
+				Errors:      []error{err},
+			})
+			continue
 		}
 		orders = append(orders, dto.CreateOrderDTO{
 			SourceOrder:  orderReq.FutureOrder,

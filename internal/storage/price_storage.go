@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/metric"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/repositories"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/repositories"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"sync"
 	"time"
 )
 
-var _ domain.PriceStorage = (*PriceStorage)(nil)
+var _ domain.PriceStorage = (*Price)(nil)
 
-type PriceStorage struct {
+type Price struct {
 	repo domain.PriceStorage
 
 	muPrices   sync.Mutex
@@ -22,17 +22,16 @@ type PriceStorage struct {
 	lastPrices map[string]domain.SymbolPrice
 }
 
-func NewPriceStorage(repo *repositories.PriceRepository) *PriceStorage {
-	return &PriceStorage{
+func NewPriceStorage(repo *repositories.PriceRepository) *Price {
+	return &Price{
 		repo:       repo,
 		lastPrices: make(map[string]domain.SymbolPrice),
 	}
 }
 
-func (p *PriceStorage) Run(ctx context.Context) {
+func (p *Price) Run(ctx context.Context) {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -43,7 +42,7 @@ func (p *PriceStorage) Run(ctx context.Context) {
 	}
 }
 
-func (p *PriceStorage) UpdatePrices(ctx context.Context) {
+func (p *Price) UpdatePrices(ctx context.Context) {
 	p.muPrices.Lock()
 	prices := p.prices
 	p.prices = make([]domain.SymbolPrice, 0, len(prices))
@@ -55,7 +54,7 @@ func (p *PriceStorage) UpdatePrices(ctx context.Context) {
 	metric.PriceSaved.Add(float64(len(prices)))
 }
 
-func (p *PriceStorage) AddPrices(prices []domain.SymbolPrice) {
+func (p *Price) AddPrices(prices []domain.SymbolPrice) {
 	prices = p.mutatePrice(prices)
 	p.muPrices.Lock()
 	p.prices = append(p.prices, prices...)
@@ -66,7 +65,7 @@ func (p *PriceStorage) AddPrices(prices []domain.SymbolPrice) {
 		p.lastPrices[key] = price
 	}
 }
-func (p *PriceStorage) SavePrices(ctx context.Context, prices []domain.SymbolPrice) error {
+func (p *Price) SavePrices(ctx context.Context, prices []domain.SymbolPrice) error {
 	p.AddPrices(prices)
 	if err := p.repo.SavePrices(ctx, p.mutatePrice(prices)); err != nil {
 		zap.L().Error("save prices", zap.Error(err))
@@ -74,13 +73,14 @@ func (p *PriceStorage) SavePrices(ctx context.Context, prices []domain.SymbolPri
 	return nil
 }
 
-func (p *PriceStorage) LastPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
+func (p *Price) LastPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	var symbolPrices []domain.SymbolPrice
 	p.muPrices.Lock()
-	for _, lp := range p.lastPrices {
+	lastPrices := p.lastPrices
+	p.muPrices.Unlock()
+	for _, lp := range lastPrices {
 		symbolPrices = append(symbolPrices, lp)
 	}
-	p.muPrices.Unlock()
 	if len(symbolPrices) > 0 {
 		return symbolPrices, nil
 	}
@@ -91,7 +91,21 @@ func (p *PriceStorage) LastPrices(ctx context.Context) ([]domain.SymbolPrice, er
 	return symbolPrices, nil
 }
 
-func (p *PriceStorage) SymbolPrice(ctx context.Context, symbol string) ([]domain.SymbolPrice, error) {
+func (p *Price) LastPrice(ctx context.Context, exchange, symbol string) (domain.SymbolPrice, error) {
+	prices, err := p.LastPrices(ctx)
+	if err != nil {
+		return domain.SymbolPrice{}, err
+	}
+	for _, price := range prices {
+		if price.Exchange == exchange && price.Symbol == symbol {
+			return price, nil
+		}
+	}
+
+	return domain.SymbolPrice{}, nil
+}
+
+func (p *Price) SymbolPrice(ctx context.Context, symbol string) ([]domain.SymbolPrice, error) {
 	var symbolPrices []domain.SymbolPrice
 	p.muPrices.Lock()
 	for _, lp := range p.lastPrices {
@@ -110,7 +124,7 @@ func (p *PriceStorage) SymbolPrice(ctx context.Context, symbol string) ([]domain
 	return symbolPrices, nil
 }
 
-func (p *PriceStorage) filterLastPrices(prices []domain.SymbolPrice) []domain.SymbolPrice {
+func (p *Price) filterLastPrices(prices []domain.SymbolPrice) []domain.SymbolPrice {
 	uniq := make(map[string]domain.SymbolPrice)
 	for _, price := range prices {
 		key := fmt.Sprintf("%s-%s", price.Exchange, price.Symbol)
@@ -131,7 +145,7 @@ func (p *PriceStorage) filterLastPrices(prices []domain.SymbolPrice) []domain.Sy
 	return result
 }
 
-func (p *PriceStorage) mutatePrice(data []domain.SymbolPrice) []domain.SymbolPrice {
+func (p *Price) mutatePrice(data []domain.SymbolPrice) []domain.SymbolPrice {
 	result := make([]domain.SymbolPrice, 0, len(data))
 	for _, item := range data {
 		price := item

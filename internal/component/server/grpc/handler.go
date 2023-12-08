@@ -3,8 +3,10 @@ package grpc
 import (
 	"context"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/server/grpc/specification"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/server/grpc/specification"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"strconv"
 	"time"
@@ -24,7 +26,7 @@ func NewHandler(priceStorage domain.PriceStorage) specification.EventServiceServ
 func (h *handler) Prices(ctx context.Context, req *specification.EmptyRequest) (*specification.SymbolPrices, error) {
 	sp, err := h.priceStorage.LastPrices(ctx)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	prices := make([]*specification.SymbolPrice, 0, len(sp))
 	for _, item := range sp {
@@ -59,7 +61,7 @@ func (h *handler) TickerPrices(req *specification.DurationSeconds, stream specif
 		case <-ticker.C:
 			sp, err := h.priceStorage.LastPrices(stream.Context())
 			if err != nil {
-				return err
+				return status.Error(codes.Internal, err.Error())
 			}
 			prices := make([]*specification.SymbolPrice, 0, len(sp))
 			for _, item := range sp {
@@ -80,7 +82,7 @@ func (h *handler) TickerPrices(req *specification.DurationSeconds, stream specif
 				})
 			}
 			if err := stream.Send(&specification.SymbolPrices{Prices: prices}); err != nil {
-				return err
+				return status.Error(codes.Internal, err.Error())
 			}
 		}
 	}
@@ -89,7 +91,7 @@ func (h *handler) TickerPrices(req *specification.DurationSeconds, stream specif
 func (h *handler) SymbolPrice(ctx context.Context, req *specification.SymbolPriceRequest) (*specification.SymbolPrices, error) {
 	sp, err := h.priceStorage.SymbolPrice(ctx, req.GetSymbol())
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	prices := make([]*specification.SymbolPrice, 0, len(sp))
 	for _, item := range sp {

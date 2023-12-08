@@ -42,4 +42,5 @@ type CreateOrderDTO struct {
 	SourceOrder  FutureOrder `json:"source_order"`
 	CreatedOrder []OrderDTO  `json:"created_order"`
 	Exchange     string      `json:"exchange"`
+	Errors       []error     `json:"errors"`
 }

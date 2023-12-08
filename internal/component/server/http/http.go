@@ -4,9 +4,11 @@ import (
 	"errors"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/dto"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/order"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/aggregator"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/order"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -15,21 +17,34 @@ type Server struct {
 	priceStorage domain.PriceStorage
 	e            *echo.Echo
 	order        *order.Order
+	agg          *aggregator.Aggregator
 }
 
-func NewServer(host string, priceStorage domain.PriceStorage, order *order.Order) *Server {
+func NewServer(host string, priceStorage domain.PriceStorage, order *order.Order, agg *aggregator.Aggregator) *Server {
 	return &Server{
 		host:         host,
 		priceStorage: priceStorage,
 		order:        order,
+		agg:          agg,
 
 		e: echo.New(),
 	}
 }
 
 func (s *Server) Run() error {
+	s.e.HideBanner = true
 	s.e.Use(middleware.Recover())
 	s.e.Use(middleware.CORS())
+	s.e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			err := next(c)
+			if err != nil {
+				return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				zap.L().Error("error http execute", zap.Error(err))
+			}
+			return nil
+		}
+	})
 	s.e.GET("/prices", func(c echo.Context) error {
 		prices, err := s.priceStorage.LastPrices(c.Request().Context())
 		if err != nil {
@@ -59,6 +74,21 @@ func (s *Server) Run() error {
 		}
 
 		return c.JSON(http.StatusOK, orders)
+	})
+	s.e.GET("/snapshot/:exchange/:symbol", func(c echo.Context) error {
+		symbol := c.Param("symbol")
+		if symbol == "" {
+			return errors.New("empty symbol")
+		}
+		exchange := c.Param("exchange")
+		if symbol == "" {
+			return errors.New("empty exchange")
+		}
+		snapshot, err := s.agg.SymbolSnapshot(c.Request().Context(), exchange, symbol)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, snapshot)
 	})
 	return s.e.Start(s.host)
 }

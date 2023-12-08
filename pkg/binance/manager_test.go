@@ -40,24 +40,29 @@ func TestClient_Ping(t *testing.T) {
 	}
 	defer c.Close()
 	c.WithSender(sender.NewLogger(zap.L(), sender.NewBasic()))
-	c.FutureQueryOrder(
-		context.TODO(),
-		domain.CredentialDTO{APIKey: apiKeyFuture, ApiSecret: apiSecretFuture},
-		"BTCUSDT",
-		3543846157)
-	c.FutureCancelMultipleOrders(
-		domain.CredentialDTO{APIKey: apiKeyFuture, ApiSecret: apiSecretFuture},
-		"BTCUSDT",
-		[]int{3543918994, 3543918996, 3543918995})
+	data, _ := c.FuturesExchangeInformation(context.TODO())
+	saveToFile(data)
+	//c.FutureCandlestickData(context.TODO(), "BTCUSDT", "1m")
+	//c.FutureQueryOrder(
+	//	context.TODO(),
+	//	domain.CredentialDTO{APIKey: apiKeyFuture, ApiSecret: apiSecretFuture},
+	//	"BTCUSDT",
+	//	3543846157)
+	//c.FutureCancelMultipleOrders(
+	//	domain.CredentialDTO{APIKey: apiKeyFuture, ApiSecret: apiSecretFuture},
+	//	"BTCUSDT",
+	//	[]int{3543918994, 3543918996, 3543918995})
 }
 
 func saveToFile(data []byte) {
-	file, err := os.Create(fmt.Sprintf("/Users/alexey.porandaikin/Projects/go/projects/crypto_loader/storage/temp/%s.json", uuid.New().String()))
+	fileName := uuid.New().String()
+	file, err := os.Create(fmt.Sprintf("/Users/alexey.porandaikin/Projects/go/projects/crypto_loader/storage/temp/%s.json", fileName))
 	if err != nil {
 		return
 	}
 	defer file.Close()
 	file.Write(data)
+	fmt.Println("save file in : ", fileName)
 }
 
 func TestManager_FuturesPlaceMultipleOrders(t *testing.T) {

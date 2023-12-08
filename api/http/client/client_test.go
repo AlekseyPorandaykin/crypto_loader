@@ -17,3 +17,9 @@ func TestClient_AllSymbolPrices(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, prices)
 }
+
+func TestClient_SymbolSnapshot(t *testing.T) {
+	snapshot, err := DefaultClient().SymbolSnapshot(context.TODO(), "binance", "BTCUSDT")
+	require.NoError(t, err)
+	require.NotEmpty(t, snapshot)
+}

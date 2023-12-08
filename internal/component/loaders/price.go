@@ -20,14 +20,16 @@ type Price struct {
 	muPrices sync.Mutex
 	prices   []domain.SymbolPrice
 
-	storage *storage.PriceStorage
+	priceStorage  *storage.Price
+	symbolStorage *storage.Symbol
 }
 
-func NewPrice(storage *storage.PriceStorage) *Price {
+func NewPrice(priceStorage *storage.Price, symbolStorage *storage.Symbol) *Price {
 	return &Price{
-		clients: make(map[string]Client),
-		prices:  make([]domain.SymbolPrice, 0, 10000),
-		storage: storage,
+		clients:       make(map[string]Client),
+		prices:        make([]domain.SymbolPrice, 0, 10000),
+		priceStorage:  priceStorage,
+		symbolStorage: symbolStorage,
 	}
 }
 
@@ -35,8 +37,13 @@ func (p *Price) AddClient(name string, client Client) {
 	p.clients[name] = client
 }
 
+func (p *Price) Init(ctx context.Context) {
+	for name, client := range p.clients {
+		p.loadPrices(ctx, name, client)
+	}
+}
+
 func (p *Price) Run(ctx context.Context, d time.Duration) {
-	zap.L().Debug("Start loader price", zap.Int("count exchange", len(p.clients)))
 	for name, client := range p.clients {
 		go func(name string, client Client) {
 			p.loadPrices(ctx, name, client)
@@ -64,5 +71,18 @@ func (p *Price) loadPrices(ctx context.Context, name string, client Client) {
 	}
 	metric.PriceLoadDuration.WithLabelValues(name).Add(float64(time.Since(start).Milliseconds()))
 	metric.PriceLoaded.WithLabelValues(name).Add(float64(len(prices)))
-	p.storage.AddPrices(prices)
+	p.priceStorage.AddPrices(prices)
+
+	symbols := make([]string, 0, len(prices))
+	uniqSymbols := make(map[string]bool, len(prices))
+	for _, price := range prices {
+		if uniqSymbols[price.Symbol] {
+			continue
+		}
+		symbols = append(symbols, price.Symbol)
+		uniqSymbols[price.Symbol] = true
+	}
+	if err := p.symbolStorage.SaveSymbols(ctx, name, symbols); err != nil {
+		zap.L().Error("error load symbols", zap.Error(err))
+	}
 }

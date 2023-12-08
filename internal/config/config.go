@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/repositories"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/repositories"
 	"time"
 )
 
@@ -32,9 +32,9 @@ func Create() AppConfig {
 	return AppConfig{
 		DurationPriceRequest: defaultDurationPriceRequest,
 
-		BinanceSpotHost: "https://api.binance.com",
-		//BinanceFutureHost: "https://fapi.binance.com",
-		BinanceFutureHost: "https://testnet.binancefuture.com",
+		BinanceSpotHost:   "https://api.binance.com",
+		BinanceFutureHost: "https://fapi.binance.com",
+		//BinanceFutureHost: "https://testnet.binancefuture.com",
 
 		BybitHost:  "https://api.bybit.com",
 		KucoinHost: "https://api.kucoin.com/",

@@ -61,3 +61,25 @@ type LeverageDTO struct {
 	Leverage         int    `json:"leverage"`
 	MaxNotionalValue string `json:"maxNotionalValue"`
 }
+
+type CandlestickBarDTO struct {
+	OpenTime                 float64
+	OpenPrice                string
+	HighPrice                string
+	LowPrice                 string
+	ClosePrice               string
+	Volume                   string
+	CloseTime                float64
+	QuoteAssetVolume         string
+	NumberOfTrades           float64
+	TakerBuyBaseAssetVolume  string
+	TakerBuyQuoteAssetVolume string
+	Ignore                   string
+}
+
+type CandlestickInterval string
+
+const (
+	OneHourCandlestickInterval  CandlestickInterval = "1h"
+	FourHourCandlestickInterval CandlestickInterval = "4h"
+)

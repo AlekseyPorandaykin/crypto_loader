@@ -5,13 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/clients"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/aggregator"
+	loaders2 "github.com/AlekseyPorandaykin/crypto_loader/internal/component/loaders"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/order"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/server/grpc"
+	http_server "github.com/AlekseyPorandaykin/crypto_loader/internal/component/server/http"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/config"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/loaders"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/order"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/repositories"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/server/grpc"
-	http_server "github.com/AlekseyPorandaykin/crypto_loader/internal/server/http"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
+	repositories2 "github.com/AlekseyPorandaykin/crypto_loader/internal/storage/repositories"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance/sender"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bitget"
@@ -82,7 +83,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		//DB
-		db, err := repositories.CreateDB(conf.ConfDB)
+		db, err := repositories2.CreateDB(conf.ConfDB)
 		if err != nil {
 			fmt.Println("Error init database: ", err.Error())
 			return
@@ -90,16 +91,18 @@ var rootCmd = &cobra.Command{
 		defer func() { _ = db.Close() }()
 
 		//Repository
-		priceRepo := repositories.NewPriceRepository(db)
+		priceRepo := repositories2.NewPriceRepository(db)
 		//Storage
 		priceStorage := storage.NewPriceStorage(priceRepo)
+		symbolStorage := storage.NewSymbol()
+		candleStorage := storage.NewCandlestick()
 
 		//Clients
 		binanceAdapter := clients.NewBinance(binanceClient)
 
 		//Application
 
-		priceLoader := loaders.NewPrice(priceStorage)
+		priceLoader := loaders2.NewPrice(priceStorage, symbolStorage)
 		priceLoader.AddClient("binance", binanceAdapter)
 		priceLoader.AddClient("byBit", clients.NewByBit(byBitClient))
 		priceLoader.AddClient("kukoin", clients.NewKucoin(kukoinClient))
@@ -109,19 +112,28 @@ var rootCmd = &cobra.Command{
 		priceLoader.AddClient("bitget", clients.NewBitget(bitgetClient))
 		priceLoader.AddClient("mexc", clients.NewMexc(mexcClient))
 
+		candleLoader := loaders2.NewCandlestick(symbolStorage, candleStorage)
+		candleLoader.AddLoader("binance", binanceAdapter)
+
 		order := order.NewOrder()
 		order.AddExchange("binance", binanceAdapter)
 
+		agg := aggregator.NewAggregator(candleStorage, priceStorage, symbolStorage)
+
 		//Servers
-		servHTTP := http_server.NewServer(conf.HttpAddr, priceStorage, order)
+		servHTTP := http_server.NewServer(conf.HttpAddr, priceStorage, order, agg)
 		defer servHTTP.Close()
 
 		servGrpc := grpc.NewServer(priceStorage, conf.GrpcAddr)
 		defer servGrpc.Close()
 
+		//Init
+		//priceLoader.Init(ctx)
+
 		//Runs
 		go priceStorage.Run(ctx)
 		go priceLoader.Run(ctx, conf.DurationPriceRequest)
+		go candleLoader.Run(ctx)
 		go func() {
 			defer cancel()
 			if err := servHTTP.Run(); err != nil && !errors.Is(err, context.Canceled) {

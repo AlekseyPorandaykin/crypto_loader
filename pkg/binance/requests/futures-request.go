@@ -159,3 +159,22 @@ func (r *FutureRequest) CancelMultipleOrders(apiKey, secretKey string, symbol st
 	}
 	return req, 1, nil
 }
+
+func (r *FutureRequest) CandlestickData(ctx context.Context, symbol string, interval domain.CandlestickInterval) (*http.Request, int, error) {
+	urlReq := r.host.JoinPath("/fapi/v1/klines")
+	q := urlReq.Query()
+	q.Set("symbol", symbol)
+	q.Set("interval", string(interval))
+	q.Set("limit", "100")
+	urlReq.RawQuery = q.Encode()
+	req, err := http.NewRequest(
+		http.MethodGet,
+		urlReq.String(),
+		nil,
+	)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "error create request")
+	}
+	req.WithContext(ctx)
+	return req, 2, nil
+}
