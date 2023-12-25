@@ -44,6 +44,7 @@ func (c *Candlestick) load(ctx context.Context, exchange string) {
 		return
 	}
 	go func() {
+		c.loadFutureCandlestickOneHour(ctx, exchange, loader)
 		ticker := time.NewTicker(100 * time.Second)
 		defer ticker.Stop()
 		for {

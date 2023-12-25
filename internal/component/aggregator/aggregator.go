@@ -30,6 +30,9 @@ func (a *Aggregator) SymbolSnapshot(ctx context.Context, exchange, symbol string
 	if err != nil {
 		return domain.SymbolSnapshot{}, errors.Wrap(err, "error get lastPrice")
 	}
+	if !a.symbolStorage.HasExchange(exchange) {
+		return domain.SymbolSnapshot{}, errors.New("not found exchange")
+	}
 	if !a.symbolStorage.HasSymbol(exchange, symbol) {
 		return domain.SymbolSnapshot{}, errors.New("not found symbol")
 	}

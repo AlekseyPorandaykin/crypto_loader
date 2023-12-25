@@ -37,10 +37,19 @@ func (s *Symbol) ExchangeSymbols(exchange string) []string {
 
 func (s *Symbol) HasSymbol(exchange, symbol string) bool {
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	if s.symbols[exchange] == nil {
 		return false
 	}
 	_, has := s.symbols[exchange][symbol]
-	s.mu.Unlock()
 	return has
+}
+
+func (s *Symbol) HasExchange(exchange string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.symbols[exchange] == nil {
+		return false
+	}
+	return true
 }

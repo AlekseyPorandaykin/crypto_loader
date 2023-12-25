@@ -69,7 +69,6 @@ func (r *FutureRequest) QueryIndexPriceConstituents(ctx context.Context, symbol 
 	urlReq := r.host.JoinPath("/fapi/v1/constituents")
 	q := urlReq.Query()
 	q.Set("symbol", symbol)
-	q.Encode()
 	urlReq.RawQuery = q.Encode()
 	req, err := http.NewRequest(
 		http.MethodGet,

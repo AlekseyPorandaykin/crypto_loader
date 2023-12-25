@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/metric"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/repositories"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"sync"
@@ -22,7 +21,7 @@ type Price struct {
 	lastPrices map[string]domain.SymbolPrice
 }
 
-func NewPriceStorage(repo *repositories.PriceRepository) *Price {
+func NewPriceStorage(repo domain.PriceStorage) *Price {
 	return &Price{
 		repo:       repo,
 		lastPrices: make(map[string]domain.SymbolPrice),
@@ -76,11 +75,10 @@ func (p *Price) SavePrices(ctx context.Context, prices []domain.SymbolPrice) err
 func (p *Price) LastPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	var symbolPrices []domain.SymbolPrice
 	p.muPrices.Lock()
-	lastPrices := p.lastPrices
-	p.muPrices.Unlock()
-	for _, lp := range lastPrices {
+	for _, lp := range p.lastPrices {
 		symbolPrices = append(symbolPrices, lp)
 	}
+	p.muPrices.Unlock()
 	if len(symbolPrices) > 0 {
 		return symbolPrices, nil
 	}
@@ -150,6 +148,7 @@ func (p *Price) mutatePrice(data []domain.SymbolPrice) []domain.SymbolPrice {
 	for _, item := range data {
 		price := item
 		price.Date = price.Date.In(time.UTC)
+		price.UpdatedAt = time.Now().In(time.UTC)
 		result = append(result, price)
 	}
 

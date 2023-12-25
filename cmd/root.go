@@ -12,7 +12,7 @@ import (
 	http_server "github.com/AlekseyPorandaykin/crypto_loader/internal/component/server/http"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/config"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
-	repositories2 "github.com/AlekseyPorandaykin/crypto_loader/internal/storage/repositories"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/memory"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance/sender"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bitget"
@@ -83,15 +83,15 @@ var rootCmd = &cobra.Command{
 		}
 
 		//DB
-		db, err := repositories2.CreateDB(conf.ConfDB)
-		if err != nil {
-			fmt.Println("Error init database: ", err.Error())
-			return
-		}
-		defer func() { _ = db.Close() }()
+		//db, err := repositories2.CreateDB(conf.ConfDB)
+		//if err != nil {
+		//	fmt.Println("Error init database: ", err.Error())
+		//	return
+		//}
+		//defer func() { _ = db.Close() }()
 
 		//Repository
-		priceRepo := repositories2.NewPriceRepository(db)
+		priceRepo := memory.NewPriceRepository()
 		//Storage
 		priceStorage := storage.NewPriceStorage(priceRepo)
 		symbolStorage := storage.NewSymbol()
