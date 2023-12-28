@@ -6,6 +6,7 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/dto"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kucoin"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kucoin/response"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 	"strings"
@@ -24,7 +25,7 @@ func NewKucoin(client *kucoin.Client) *Kucoin {
 
 func (c *Kucoin) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
 	result := make([]domain.SymbolPrice, 0, 1500)
-	var allTickersResp kucoin.AllTickersResponse
+	var allTickersResp response.AllTickersResponse
 	err := backoff.Retry(func() error {
 		var err error
 		allTickersResp, err = c.client.GetAllTickers(ctx)

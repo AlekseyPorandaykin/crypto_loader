@@ -57,7 +57,7 @@ func (e *Error) Detail() string {
 		detail = fmt.Sprintf("%s, http_code=%d", detail, e.httpCode)
 	}
 	if e.externalError.Code != 0 || e.externalError.Message != "" {
-		detail = fmt.Sprintf("%s, ExternalCode=%d ExternalMessage=%s", detail, e.externalError.Code, e.externalError.Message)
+		detail = fmt.Sprintf("%s, ExchangeCode=%d ExternalMessage=%s", detail, e.externalError.Code, e.externalError.Message)
 	}
 	if e.cause != nil {
 		detail = fmt.Sprintf("%s, cause=%s", detail, e.cause.Error())

@@ -33,7 +33,6 @@ func (c *Client) SpotTicker(ctx context.Context) (TickerResponse, error) {
 	urlReq := c.host.JoinPath("/v5/market/tickers")
 	q := urlReq.Query()
 	q.Set("category", "spot")
-	q.Encode()
 	urlReq.RawQuery = q.Encode()
 	req, err := http.NewRequest(
 		http.MethodGet,

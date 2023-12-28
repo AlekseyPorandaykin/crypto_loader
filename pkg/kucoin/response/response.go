@@ -1,4 +1,4 @@
-package kucoin
+package response
 
 type CommonResponse struct {
 	Code string      `json:"code"`
@@ -7,6 +7,14 @@ type CommonResponse struct {
 
 func (r CommonResponse) IsOk() bool {
 	return r.Code == "200000"
+}
+
+type Paginator struct {
+	CurrentPage uint        `json:"currentPage"`
+	PageSize    uint        `json:"pageSize"`
+	TotalNum    uint        `json:"totalNum"`
+	TotalPage   uint        `json:"totalPage"`
+	Data        interface{} `json:"data"`
 }
 
 type Ticker struct {
@@ -34,4 +42,38 @@ type TickersData struct {
 type AllTickersResponse struct {
 	CommonResponse
 	Data TickersData `json:"data"`
+}
+
+type UserInfo struct {
+	Level                 int `json:"level"`
+	SubQuantity           int `json:"subQuantity"`
+	SpotSubQuantity       int `json:"spotSubQuantity"`
+	MarginSubQuantity     int `json:"marginSubQuantity"`
+	FuturesSubQuantity    int `json:"futuresSubQuantity"`
+	MaxSubQuantity        int `json:"maxSubQuantity"`
+	MaxDefaultSubQuantity int `json:"maxDefaultSubQuantity"`
+	MaxSpotSubQuantity    int `json:"maxSpotSubQuantity"`
+	MaxMarginSubQuantity  int `json:"maxMarginSubQuantity"`
+	MaxFuturesSubQuantity int `json:"maxFuturesSubQuantity"`
+}
+
+type UserInfoResponse struct {
+	CommonResponse
+	Data UserInfo `json:"data"`
+}
+
+type Account struct {
+	ID        string `json:"id"`
+	Currency  string `json:"currency"`
+	Type      string `json:"type"`
+	Balance   string `json:"balance"`
+	Available string `json:"available"`
+	Holds     string `json:"holds"`
+}
+
+type AccountList []Account
+
+type AccountListResponse struct {
+	CommonResponse
+	Data AccountList `json:"data"`
 }
