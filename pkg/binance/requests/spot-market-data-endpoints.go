@@ -35,7 +35,6 @@ func (c *SpotRequest) RollingWindowPriceChangeStatistics(
 	q := urlReq.Query()
 	q.Set("symbols", string(symbolsReq))
 	q.Set("windowSize", widowSize)
-	q.Encode()
 	urlReq.RawQuery = q.Encode()
 	req, err := http.NewRequest(http.MethodGet, urlReq.String(), nil)
 	if err != nil {

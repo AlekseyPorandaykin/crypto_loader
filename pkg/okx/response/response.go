@@ -1,4 +1,4 @@
-package okx
+package response
 
 type CommonResponse struct {
 	Code    string      `json:"code"`
@@ -42,4 +42,16 @@ type Ticker struct {
 type TickersResponse struct {
 	CommonResponse
 	Data []Ticker `json:"data"`
+}
+
+type FundingBalance struct {
+	AvailableBalance string `json:"availBal"`
+	Balance          string `json:"bal"`
+	Currency         string `json:"ccy"`
+	FrozenBalance    string `json:"frozenBal"`
+}
+
+type FundingBalanceResponse struct {
+	CommonResponse
+	Data []FundingBalance `json:"data"`
 }
