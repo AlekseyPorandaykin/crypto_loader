@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/dto"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/aggregator"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/candlestick"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/order"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -17,10 +17,10 @@ type Server struct {
 	priceStorage domain.PriceStorage
 	e            *echo.Echo
 	order        *order.Order
-	agg          *aggregator.Aggregator
+	agg          *candlestick.Candlestick
 }
 
-func NewServer(host string, priceStorage domain.PriceStorage, order *order.Order, agg *aggregator.Aggregator) *Server {
+func NewServer(host string, priceStorage domain.PriceStorage, order *order.Order, agg *candlestick.Candlestick) *Server {
 	return &Server{
 		host:         host,
 		priceStorage: priceStorage,
@@ -39,8 +39,8 @@ func (s *Server) Run() error {
 		return func(c echo.Context) error {
 			err := next(c)
 			if err != nil {
+				zap.L().Error("error http execute", zap.Error(err), zap.String("url", c.Request().URL.String()))
 				return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-				zap.L().Error("error http execute", zap.Error(err))
 			}
 			return nil
 		}

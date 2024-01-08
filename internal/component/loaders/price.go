@@ -37,12 +37,6 @@ func (p *Price) AddClient(name string, client Client) {
 	p.clients[name] = client
 }
 
-func (p *Price) Init(ctx context.Context) {
-	for name, client := range p.clients {
-		p.loadPrices(ctx, name, client)
-	}
-}
-
 func (p *Price) Run(ctx context.Context, d time.Duration) {
 	for name, client := range p.clients {
 		go func(name string, client Client) {

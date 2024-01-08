@@ -55,3 +55,22 @@ type FundingBalanceResponse struct {
 	CommonResponse
 	Data []FundingBalance `json:"data"`
 }
+
+type TradingAccountBalance struct {
+	AdjustedEffectiveEquity           string        `json:"adjEq"`
+	PotentialBorrowingIMR             string        `json:"borrowFroz"`
+	Details                           []interface{} `json:"details"`
+	InitialMarginRequirement          string        `json:"imr"`
+	IsolatedMarginEquity              string        `json:"isoEq"`
+	MarginRatio                       string        `json:"mgnRatio"`
+	MaintenanceMarginRequirement      string        `json:"mmr"`
+	NotionalValueOfPositions          string        `json:"notionalUsd"`
+	MarginFrozenForPendingCrossOrders string        `json:"ordFroz"`
+	TotalAmountEquity                 string        `json:"totalEq"`
+	LatestTime                        string        `json:"uTime"`
+}
+
+type TradingAccountBalanceResponse struct {
+	CommonResponse
+	Data []TradingAccountBalance `json:"data"`
+}

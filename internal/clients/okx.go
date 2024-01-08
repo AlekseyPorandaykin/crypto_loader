@@ -6,6 +6,7 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/dto"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/okx"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/okx/response"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 	"strings"
@@ -22,7 +23,7 @@ func NewOkx(client *okx.Client) *Okx {
 
 func (c *Okx) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
 	result := make([]domain.SymbolPrice, 0, 500)
-	var tickerResp okx.TickersResponse
+	var tickerResp response.TickersResponse
 	err := backoff.Retry(func() error {
 		var err error
 		tickerResp, err = c.client.Tickers(ctx)

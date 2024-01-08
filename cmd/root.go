@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/clients"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/aggregator"
-	loaders2 "github.com/AlekseyPorandaykin/crypto_loader/internal/component/loaders"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/candlestick"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/loaders"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/order"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/server/grpc"
 	http_server "github.com/AlekseyPorandaykin/crypto_loader/internal/component/server/http"
@@ -20,6 +20,7 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/gateio"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kraken"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kucoin"
+	kukoin_sender "github.com/AlekseyPorandaykin/crypto_loader/pkg/kucoin/sender"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/mexc"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/okx"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -51,7 +52,7 @@ var rootCmd = &cobra.Command{
 			fmt.Println("Error init byBitClient: ", err.Error())
 			return
 		}
-		kukoinClient, err := kucoin.NewClient(conf.KucoinHost)
+		kukoinClient, err := kucoin.NewClient(conf.KucoinHost, kukoin_sender.New())
 		if err != nil {
 			fmt.Println("Error init kukoinClient: ", err.Error())
 			return
@@ -102,7 +103,7 @@ var rootCmd = &cobra.Command{
 
 		//Application
 
-		priceLoader := loaders2.NewPrice(priceStorage, symbolStorage)
+		priceLoader := loaders.NewPrice(priceStorage, symbolStorage)
 		priceLoader.AddClient("binance", binanceAdapter)
 		priceLoader.AddClient("byBit", clients.NewByBit(byBitClient))
 		priceLoader.AddClient("kukoin", clients.NewKucoin(kukoinClient))
@@ -112,13 +113,13 @@ var rootCmd = &cobra.Command{
 		priceLoader.AddClient("bitget", clients.NewBitget(bitgetClient))
 		priceLoader.AddClient("mexc", clients.NewMexc(mexcClient))
 
-		candleLoader := loaders2.NewCandlestick(symbolStorage, candleStorage)
+		candleLoader := loaders.NewCandlestick(symbolStorage, candleStorage)
 		candleLoader.AddLoader("binance", binanceAdapter)
 
 		order := order.NewOrder()
 		order.AddExchange("binance", binanceAdapter)
 
-		agg := aggregator.NewAggregator(candleStorage, priceStorage, symbolStorage)
+		agg := candlestick.NewCandlestick(candleStorage, priceStorage, symbolStorage)
 
 		//Servers
 		servHTTP := http_server.NewServer(conf.HttpAddr, priceStorage, order, agg)
@@ -126,9 +127,6 @@ var rootCmd = &cobra.Command{
 
 		servGrpc := grpc.NewServer(priceStorage, conf.GrpcAddr)
 		defer servGrpc.Close()
-
-		//Init
-		//priceLoader.Init(ctx)
 
 		//Runs
 		go priceStorage.Run(ctx)
@@ -153,7 +151,6 @@ var rootCmd = &cobra.Command{
 				zap.L().Error("failed start metrics", zap.Error(err))
 			}
 		}()
-
 		<-ctx.Done()
 	},
 }

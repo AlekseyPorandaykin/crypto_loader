@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"net/http"
 	"net/url"
 	"time"
@@ -43,7 +44,10 @@ type SymbolSnapshotResponse struct {
 }
 
 func DefaultClient() *Client {
-	c, _ := NewClient("http://localhost:8081", http.DefaultClient)
+	c, err := NewClient("http://localhost:8081", http.DefaultClient)
+	if err != nil {
+		zap.L().Panic("error init crypto_loader client", zap.Error(err))
+	}
 	return c
 }
 

@@ -7,7 +7,6 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/okx/response"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/okx/sender"
 	"github.com/pkg/errors"
-	"io"
 )
 
 type Client struct {
@@ -60,21 +59,23 @@ func (c *Client) Tickers(ctx context.Context) (response.TickersResponse, error) 
 	return result, nil
 }
 
-func (c *Client) TradingAccountBalance(ctx context.Context, cred request.Credential) ([]byte, error) {
+func (c *Client) TradingAccountBalance(
+	ctx context.Context, cred request.Credential,
+) (response.TradingAccountBalanceResponse, error) {
 	req, err := c.tradingAccount.GetBalance(ctx, cred)
 	if err != nil {
-		return nil, err
+		return response.TradingAccountBalanceResponse{}, err
 	}
 	resp, err := c.sender.Send(req)
 	if err != nil {
-		return nil, err
+		return response.TradingAccountBalanceResponse{}, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+	balance := response.TradingAccountBalanceResponse{}
+	if errDecode := json.NewDecoder(resp.Body).Decode(&balance); errDecode != nil {
+		return response.TradingAccountBalanceResponse{}, errDecode
 	}
-	return data, nil
+	return balance, nil
 }
 
 func (c *Client) FundingBalance(ctx context.Context, cred request.Credential) (response.FundingBalanceResponse, error) {

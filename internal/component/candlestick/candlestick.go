@@ -1,4 +1,4 @@
-package aggregator
+package candlestick
 
 import (
 	"context"
@@ -9,23 +9,23 @@ import (
 	"time"
 )
 
-type Aggregator struct {
+type Candlestick struct {
 	candlestickStorage *storage.Candlestick
 	priceStorage       *storage.Price
 	symbolStorage      *storage.Symbol
 }
 
-func NewAggregator(
+func NewCandlestick(
 	candlestickStorage *storage.Candlestick, priceStorage *storage.Price, symbolStorage *storage.Symbol,
-) *Aggregator {
-	return &Aggregator{
+) *Candlestick {
+	return &Candlestick{
 		candlestickStorage: candlestickStorage,
 		priceStorage:       priceStorage,
 		symbolStorage:      symbolStorage,
 	}
 }
 
-func (a *Aggregator) SymbolSnapshot(ctx context.Context, exchange, symbol string) (domain.SymbolSnapshot, error) {
+func (a *Candlestick) SymbolSnapshot(ctx context.Context, exchange, symbol string) (domain.SymbolSnapshot, error) {
 	price, err := a.priceStorage.LastPrice(ctx, exchange, symbol)
 	if err != nil {
 		return domain.SymbolSnapshot{}, errors.Wrap(err, "error get lastPrice")
