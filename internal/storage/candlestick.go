@@ -22,10 +22,14 @@ func NewCandlestick() *Candlestick {
 	}
 }
 
-func (c *Candlestick) Save(ctx context.Context, candlesticks []domain.Candlestick, exchange, symbol string) error {
+func (c *Candlestick) Save(ctx context.Context, candlesticks []domain.Candlestick, exchange, symbol string, interval domain.CandlestickInterval) error {
 	now := time.Now().In(time.UTC)
 	lastTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.UTC)
 	candleEx := make(map[domain.CandlestickInterval][]domain.Candlestick)
+	if c.candleExchange[exchange] != nil && c.candleExchange[exchange][symbol] != nil {
+		candleEx = c.candleExchange[exchange][symbol]
+	}
+	candleEx[interval] = nil
 	var lastCandle domain.Candlestick
 	for _, item := range candlesticks {
 		candleEx[item.Interval] = append(candleEx[item.Interval], item)
@@ -70,11 +74,11 @@ func (c *Candlestick) LastCandlestick(
 }
 
 func (c *Candlestick) Candlestick(
-	ctx context.Context, exchange, symbol string,
-) map[domain.CandlestickInterval][]domain.Candlestick {
+	ctx context.Context, exchange, symbol string, interval domain.CandlestickInterval,
+) []domain.Candlestick {
 	if c.candleExchange[exchange] == nil || c.lastCandle[exchange][symbol] == nil {
 		return nil
 	}
 
-	return c.candleExchange[exchange][symbol]
+	return c.candleExchange[exchange][symbol][interval]
 }

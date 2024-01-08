@@ -89,7 +89,7 @@ func (c *Candlestick) loadFutureCandlestickOneHour(ctx context.Context, exchange
 			metric.CandlestickError.WithLabelValues(exchange, string(interval)).Inc()
 			continue
 		}
-		if err := c.candlestickStorage.Save(ctx, candlesticks, exchange, symbol); err != nil {
+		if err := c.candlestickStorage.Save(ctx, candlesticks, exchange, symbol, interval); err != nil {
 			log.Error("error save FutureCandlestickOneHour", zap.Error(err), zap.String("symbol", symbol))
 		}
 		metric.CandlestickSaved.WithLabelValues(exchange, string(interval)).Inc()
@@ -109,7 +109,7 @@ func (c *Candlestick) loadFutureCandlestickFourHour(ctx context.Context, exchang
 			metric.CandlestickError.WithLabelValues(exchange, string(interval)).Inc()
 			continue
 		}
-		if err := c.candlestickStorage.Save(ctx, candlesticks, exchange, symbol); err != nil {
+		if err := c.candlestickStorage.Save(ctx, candlesticks, exchange, symbol, interval); err != nil {
 			log.Error("error save FutureCandlestickFourHour", zap.Error(err), zap.String("symbol", symbol))
 		}
 		metric.CandlestickSaved.WithLabelValues(exchange, string(interval)).Inc()

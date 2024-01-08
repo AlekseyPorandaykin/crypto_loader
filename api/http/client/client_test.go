@@ -23,3 +23,15 @@ func TestClient_SymbolSnapshot(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, snapshot)
 }
+
+func TestClient_OneHourCandlesticks(t *testing.T) {
+	snapshot, err := DefaultClient().OneHourCandlesticks(context.TODO(), "binance", "BTCUSDT")
+	require.NoError(t, err)
+	require.NotEmpty(t, snapshot)
+}
+
+func TestClient_FourHourCandlesticks(t *testing.T) {
+	snapshot, err := DefaultClient().FourHourCandlesticks(context.TODO(), "binance", "BTCUSDT")
+	require.NoError(t, err)
+	require.NotEmpty(t, snapshot)
+}

@@ -123,3 +123,44 @@ func (c *Client) SymbolSnapshot(ctx context.Context, exchange, symbol string) (S
 	}
 	return res, nil
 }
+
+func (c *Client) OneHourCandlesticks(ctx context.Context, exchange, symbol string) ([]SymbolSnapshotCandlestick, error) {
+	req, err := http.NewRequest(
+		http.MethodGet,
+		fmt.Sprintf("%s/candlesticks/1h/%s/%s", c.hostUrl.String(), exchange, symbol),
+		nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "crate price request to symbol snapshot")
+	}
+	req.WithContext(ctx)
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "send request to symbol snapshot")
+	}
+	defer func() { _ = resp.Body.Close() }()
+	var res []SymbolSnapshotCandlestick
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, errors.Wrap(err, "parse response body from symbol snapshot")
+	}
+	return res, nil
+}
+func (c *Client) FourHourCandlesticks(ctx context.Context, exchange, symbol string) ([]SymbolSnapshotCandlestick, error) {
+	req, err := http.NewRequest(
+		http.MethodGet,
+		fmt.Sprintf("%s/candlesticks/4h/%s/%s", c.hostUrl.String(), exchange, symbol),
+		nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "crate price request to symbol snapshot")
+	}
+	req.WithContext(ctx)
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "send request to symbol snapshot")
+	}
+	defer func() { _ = resp.Body.Close() }()
+	var res []SymbolSnapshotCandlestick
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, errors.Wrap(err, "parse response body from symbol snapshot")
+	}
+	return res, nil
+}

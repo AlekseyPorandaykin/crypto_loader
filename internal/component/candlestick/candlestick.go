@@ -47,16 +47,46 @@ func (a *Candlestick) SymbolSnapshot(ctx context.Context, exchange, symbol strin
 	}, nil
 }
 
+func (a *Candlestick) OneHourCandlesticks(ctx context.Context, exchange, symbol string) ([]dto.Candlestick, error) {
+	if !a.symbolStorage.HasExchange(exchange) {
+		return nil, errors.New("not found exchange")
+	}
+	if !a.symbolStorage.HasSymbol(exchange, symbol) {
+		return nil, errors.New("not found symbol")
+	}
+	candles := a.candlestickStorage.Candlestick(ctx, exchange, symbol, domain.OneHourCandlestickInterval)
+	res := make([]dto.Candlestick, 0, len(candles))
+	for _, candle := range candles {
+		res = append(res, candlesticksToDTO(candle))
+	}
+	return res, nil
+}
+
+func (a *Candlestick) FourHourCandlesticks(ctx context.Context, exchange, symbol string) ([]dto.Candlestick, error) {
+	if !a.symbolStorage.HasExchange(exchange) {
+		return nil, errors.New("not found exchange")
+	}
+	if !a.symbolStorage.HasSymbol(exchange, symbol) {
+		return nil, errors.New("not found symbol")
+	}
+	candles := a.candlestickStorage.Candlestick(ctx, exchange, symbol, domain.FourHourCandlestickInterval)
+	res := make([]dto.Candlestick, 0, len(candles))
+	for _, candle := range candles {
+		res = append(res, candlesticksToDTO(candle))
+	}
+	return res, nil
+}
+
 func candlesticksToDTO(data domain.Candlestick) dto.Candlestick {
 	var openTime, closeTime, createdAt string
 	if !data.OpenTime.IsZero() {
-		openTime = data.OpenTime.Format(time.DateTime)
+		openTime = data.OpenTime.In(time.UTC).Format(time.RFC3339)
 	}
 	if !data.CloseTime.IsZero() {
-		closeTime = data.CloseTime.Format(time.DateTime)
+		closeTime = data.CloseTime.In(time.UTC).Format(time.RFC3339)
 	}
 	if !data.CreatedAt.IsZero() {
-		createdAt = data.CreatedAt.Format(time.DateTime)
+		createdAt = data.CreatedAt.In(time.UTC).Format(time.RFC3339)
 	}
 	return dto.Candlestick{
 		Symbol:       data.Symbol,

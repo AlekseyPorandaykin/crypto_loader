@@ -17,15 +17,15 @@ type Server struct {
 	priceStorage domain.PriceStorage
 	e            *echo.Echo
 	order        *order.Order
-	agg          *candlestick.Candlestick
+	candlestick  *candlestick.Candlestick
 }
 
-func NewServer(host string, priceStorage domain.PriceStorage, order *order.Order, agg *candlestick.Candlestick) *Server {
+func NewServer(host string, priceStorage domain.PriceStorage, order *order.Order, candlestick *candlestick.Candlestick) *Server {
 	return &Server{
 		host:         host,
 		priceStorage: priceStorage,
 		order:        order,
-		agg:          agg,
+		candlestick:  candlestick,
 
 		e: echo.New(),
 	}
@@ -45,52 +45,93 @@ func (s *Server) Run() error {
 			return nil
 		}
 	})
-	s.e.GET("/prices", func(c echo.Context) error {
-		prices, err := s.priceStorage.LastPrices(c.Request().Context())
-		if err != nil {
-			return err
-		}
-		return c.JSON(http.StatusOK, prices)
-	})
-	s.e.GET("/price/:symbol", func(c echo.Context) error {
-		symbol := c.Param("symbol")
-		if symbol == "" {
-			return errors.New("empty symbol")
-		}
-		prices, err := s.priceStorage.SymbolPrice(c.Request().Context(), symbol)
-		if err != nil {
-			return err
-		}
-		return c.JSON(http.StatusOK, prices)
-	})
-	s.e.POST("/order", func(c echo.Context) error {
-		req := dto.FutureOrderRequest{}
-		if err := (&echo.DefaultBinder{}).BindBody(c, &req); err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
-		}
-		orders, err := s.order.CreateFutureOrder(req)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-
-		return c.JSON(http.StatusOK, orders)
-	})
-	s.e.GET("/snapshot/:exchange/:symbol", func(c echo.Context) error {
-		symbol := c.Param("symbol")
-		if symbol == "" {
-			return errors.New("empty symbol")
-		}
-		exchange := c.Param("exchange")
-		if symbol == "" {
-			return errors.New("empty exchange")
-		}
-		snapshot, err := s.agg.SymbolSnapshot(c.Request().Context(), exchange, symbol)
-		if err != nil {
-			return err
-		}
-		return c.JSON(http.StatusOK, snapshot)
-	})
+	s.e.GET("/prices", s.prices)
+	s.e.GET("/price/:symbol", s.symbolPrice)
+	s.e.POST("/order", s.createOrder)
+	s.e.GET("/snapshot/:exchange/:symbol", s.snapshot)
+	s.e.GET("/candlesticks/1h/:exchange/:symbol", s.oneHourCandlesticks)
+	s.e.GET("/candlesticks/4h/:exchange/:symbol", s.fourHourCandlesticks)
 	return s.e.Start(s.host)
+}
+
+func (s *Server) prices(c echo.Context) error {
+	prices, err := s.priceStorage.LastPrices(c.Request().Context())
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, prices)
+}
+
+func (s *Server) symbolPrice(c echo.Context) error {
+	symbol := c.Param("symbol")
+	if symbol == "" {
+		return errors.New("empty symbol")
+	}
+	prices, err := s.priceStorage.SymbolPrice(c.Request().Context(), symbol)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, prices)
+}
+
+func (s *Server) createOrder(c echo.Context) error {
+	req := dto.FutureOrderRequest{}
+	if err := (&echo.DefaultBinder{}).BindBody(c, &req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+	orders, err := s.order.CreateFutureOrder(req)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, orders)
+}
+
+func (s *Server) snapshot(c echo.Context) error {
+	symbol := c.Param("symbol")
+	if symbol == "" {
+		return errors.New("empty symbol")
+	}
+	exchange := c.Param("exchange")
+	if symbol == "" {
+		return errors.New("empty exchange")
+	}
+	snapshot, err := s.candlestick.SymbolSnapshot(c.Request().Context(), exchange, symbol)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, snapshot)
+}
+
+func (s *Server) oneHourCandlesticks(c echo.Context) error {
+	symbol := c.Param("symbol")
+	if symbol == "" {
+		return errors.New("empty symbol")
+	}
+	exchange := c.Param("exchange")
+	if symbol == "" {
+		return errors.New("empty exchange")
+	}
+	snapshot, err := s.candlestick.OneHourCandlesticks(c.Request().Context(), exchange, symbol)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, snapshot)
+}
+func (s *Server) fourHourCandlesticks(c echo.Context) error {
+	symbol := c.Param("symbol")
+	if symbol == "" {
+		return errors.New("empty symbol")
+	}
+	exchange := c.Param("exchange")
+	if symbol == "" {
+		return errors.New("empty exchange")
+	}
+	snapshot, err := s.candlestick.FourHourCandlesticks(c.Request().Context(), exchange, symbol)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, snapshot)
 }
 
 func (s *Server) Close() {
