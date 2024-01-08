@@ -23,3 +23,12 @@ const (
 	OneHourCandlestickInterval  CandlestickInterval = "1h"
 	FourHourCandlestickInterval CandlestickInterval = "4h"
 )
+
+func HasCandlestickInterval(interval CandlestickInterval) bool {
+	switch interval {
+	case OneHourCandlestickInterval, FourHourCandlestickInterval:
+		return true
+	default:
+		return false
+	}
+}

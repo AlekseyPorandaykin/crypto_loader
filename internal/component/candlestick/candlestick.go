@@ -47,29 +47,19 @@ func (a *Candlestick) SymbolSnapshot(ctx context.Context, exchange, symbol strin
 	}, nil
 }
 
-func (a *Candlestick) OneHourCandlesticks(ctx context.Context, exchange, symbol string) ([]dto.Candlestick, error) {
+func (a *Candlestick) Candlesticks(ctx context.Context, exchange, symbol string, interval domain.CandlestickInterval) (
+	[]dto.Candlestick, error,
+) {
 	if !a.symbolStorage.HasExchange(exchange) {
 		return nil, errors.New("not found exchange")
 	}
 	if !a.symbolStorage.HasSymbol(exchange, symbol) {
 		return nil, errors.New("not found symbol")
 	}
-	candles := a.candlestickStorage.Candlestick(ctx, exchange, symbol, domain.OneHourCandlestickInterval)
-	res := make([]dto.Candlestick, 0, len(candles))
-	for _, candle := range candles {
-		res = append(res, candlesticksToDTO(candle))
+	if !domain.HasCandlestickInterval(interval) {
+		return nil, errors.New("not found interval")
 	}
-	return res, nil
-}
-
-func (a *Candlestick) FourHourCandlesticks(ctx context.Context, exchange, symbol string) ([]dto.Candlestick, error) {
-	if !a.symbolStorage.HasExchange(exchange) {
-		return nil, errors.New("not found exchange")
-	}
-	if !a.symbolStorage.HasSymbol(exchange, symbol) {
-		return nil, errors.New("not found symbol")
-	}
-	candles := a.candlestickStorage.Candlestick(ctx, exchange, symbol, domain.FourHourCandlestickInterval)
+	candles := a.candlestickStorage.Candlestick(ctx, exchange, symbol, interval)
 	res := make([]dto.Candlestick, 0, len(candles))
 	for _, candle := range candles {
 		res = append(res, candlesticksToDTO(candle))

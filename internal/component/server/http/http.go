@@ -49,8 +49,7 @@ func (s *Server) Run() error {
 	s.e.GET("/price/:symbol", s.symbolPrice)
 	s.e.POST("/order", s.createOrder)
 	s.e.GET("/snapshot/:exchange/:symbol", s.snapshot)
-	s.e.GET("/candlesticks/1h/:exchange/:symbol", s.oneHourCandlesticks)
-	s.e.GET("/candlesticks/4h/:exchange/:symbol", s.fourHourCandlesticks)
+	s.e.GET("/candlesticks/:interval/:exchange/:symbol", s.candlesticks)
 	return s.e.Start(s.host)
 }
 
@@ -103,7 +102,7 @@ func (s *Server) snapshot(c echo.Context) error {
 	return c.JSON(http.StatusOK, snapshot)
 }
 
-func (s *Server) oneHourCandlesticks(c echo.Context) error {
+func (s *Server) candlesticks(c echo.Context) error {
 	symbol := c.Param("symbol")
 	if symbol == "" {
 		return errors.New("empty symbol")
@@ -112,28 +111,18 @@ func (s *Server) oneHourCandlesticks(c echo.Context) error {
 	if symbol == "" {
 		return errors.New("empty exchange")
 	}
-	snapshot, err := s.candlestick.OneHourCandlesticks(c.Request().Context(), exchange, symbol)
+	interval := c.Param("interval")
+	if symbol == "" {
+		return errors.New("empty interval")
+	}
+	snapshot, err := s.candlestick.Candlesticks(
+		c.Request().Context(), exchange, symbol, domain.CandlestickInterval(interval),
+	)
 	if err != nil {
 		return err
 	}
 	return c.JSON(http.StatusOK, snapshot)
 }
-func (s *Server) fourHourCandlesticks(c echo.Context) error {
-	symbol := c.Param("symbol")
-	if symbol == "" {
-		return errors.New("empty symbol")
-	}
-	exchange := c.Param("exchange")
-	if symbol == "" {
-		return errors.New("empty exchange")
-	}
-	snapshot, err := s.candlestick.FourHourCandlesticks(c.Request().Context(), exchange, symbol)
-	if err != nil {
-		return err
-	}
-	return c.JSON(http.StatusOK, snapshot)
-}
-
 func (s *Server) Close() {
 	_ = s.e.Close()
 }
