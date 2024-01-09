@@ -25,13 +25,13 @@ func TestClient_SymbolSnapshot(t *testing.T) {
 }
 
 func TestClient_OneHourCandlesticks(t *testing.T) {
-	snapshot, err := DefaultClient().OneHourCandlesticks(context.TODO(), "binance", "BTCUSDT")
+	snapshot, err := DefaultClient().Candlesticks(context.TODO(), "binance", "BTCUSDT", "1h")
 	require.NoError(t, err)
 	require.NotEmpty(t, snapshot)
 }
 
 func TestClient_FourHourCandlesticks(t *testing.T) {
-	snapshot, err := DefaultClient().FourHourCandlesticks(context.TODO(), "binance", "BTCUSDT")
+	snapshot, err := DefaultClient().Candlesticks(context.TODO(), "binance", "BTCUSDT", "4h")
 	require.NoError(t, err)
 	require.NotEmpty(t, snapshot)
 }
