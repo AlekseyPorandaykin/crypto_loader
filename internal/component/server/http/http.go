@@ -70,6 +70,9 @@ func (s *Server) symbolPrice(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	if len(prices) == 0 {
+		return c.JSON(http.StatusNotFound, prices)
+	}
 	return c.JSON(http.StatusOK, prices)
 }
 
@@ -120,6 +123,9 @@ func (s *Server) candlesticks(c echo.Context) error {
 	)
 	if err != nil {
 		return err
+	}
+	if len(snapshot) == 0 {
+		return c.JSON(http.StatusNotFound, snapshot)
 	}
 	return c.JSON(http.StatusOK, snapshot)
 }

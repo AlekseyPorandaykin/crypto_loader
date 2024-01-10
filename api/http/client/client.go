@@ -78,6 +78,12 @@ func (c *Client) Prices(ctx context.Context, symbol string) ([]PriceResponse, er
 		return nil, errors.Wrap(err, "send price request")
 	}
 	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("wrong status code: %d", resp.StatusCode)
+	}
 	var prices []PriceResponse
 	if err := json.NewDecoder(resp.Body).Decode(&prices); err != nil {
 		return nil, errors.Wrap(err, "parse price response body")
@@ -96,6 +102,9 @@ func (c *Client) AllSymbolPrices(ctx context.Context) ([]PriceResponse, error) {
 		return nil, errors.Wrap(err, "send price request to loader")
 	}
 	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("wrong status code: %d", resp.StatusCode)
+	}
 	var prices []PriceResponse
 	if err := json.NewDecoder(resp.Body).Decode(&prices); err != nil {
 		return nil, errors.Wrap(err, "parse price response body from loader")
@@ -117,6 +126,9 @@ func (c *Client) SymbolSnapshot(ctx context.Context, exchange, symbol string) (S
 		return SymbolSnapshotResponse{}, errors.Wrap(err, "send request to symbol snapshot")
 	}
 	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return SymbolSnapshotResponse{}, fmt.Errorf("wrong status code: %d", resp.StatusCode)
+	}
 	var res SymbolSnapshotResponse
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return SymbolSnapshotResponse{}, errors.Wrap(err, "parse response body from symbol snapshot")
@@ -138,6 +150,12 @@ func (c *Client) Candlesticks(ctx context.Context, exchange, symbol, interval st
 		return nil, errors.Wrap(err, "send request to symbol snapshot")
 	}
 	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("wrong status code: %d", resp.StatusCode)
+	}
 	var res []SymbolSnapshotCandlestick
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return nil, errors.Wrap(err, "parse response body from symbol snapshot")

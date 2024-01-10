@@ -19,7 +19,7 @@ func TestClient_AllSymbolPrices(t *testing.T) {
 }
 
 func TestClient_SymbolSnapshot(t *testing.T) {
-	snapshot, err := DefaultClient().SymbolSnapshot(context.TODO(), "binance", "BTCUSDT")
+	snapshot, err := DefaultClient().SymbolSnapshot(context.TODO(), "binance", "BTCUSDC")
 	require.NoError(t, err)
 	require.NotEmpty(t, snapshot)
 }
