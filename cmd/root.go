@@ -14,9 +14,10 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/memory"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance/sender"
+	binance_sender "github.com/AlekseyPorandaykin/crypto_loader/pkg/binance/sender"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bitget"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit"
+	bybit_sender "github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/sender"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/gateio"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kraken"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kucoin"
@@ -46,8 +47,8 @@ var rootCmd = &cobra.Command{
 			return
 		}
 		defer binanceClient.Close()
-		binanceClient.WithSender(sender.NewBasic())
-		byBitClient, err := bybit.NewClient(conf.BybitHost)
+		binanceClient.WithSender(binance_sender.NewBasic())
+		byBitClient, err := bybit.NewClient(conf.BybitHost, bybit_sender.NewBasic())
 		if err != nil {
 			fmt.Println("Error init byBitClient: ", err.Error())
 			return

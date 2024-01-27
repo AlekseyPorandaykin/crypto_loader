@@ -3,47 +3,69 @@ package bybit
 import (
 	"context"
 	"encoding/json"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/request"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/response"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/sender"
 	"github.com/pkg/errors"
-	"net/http"
-	"net/url"
 )
 
 type Client struct {
-	httpClient *http.Client
-	host       *url.URL
+	sender sender.Sender
+
+	marketRequest  *request.Market
+	accountRequest *request.Account
+	assetRequest   *request.Asset
+	userRequest    *request.User
+	traderRequest  *request.Trade
 }
 
-func NewClient(host string) (*Client, error) {
-	urlHost, err := url.Parse(host)
+func DefaultClient(host string) (*Client, error) {
+	return NewClient(host, sender.NewBasic())
+}
+
+func NewClient(host string, sender sender.Sender) (*Client, error) {
+	marketReq, err := request.NewMarket(host)
+	if err != nil {
+		return nil, err
+	}
+	accountReq, err := request.NewAccount(host)
+	if err != nil {
+		return nil, err
+	}
+	assetReq, err := request.NewAsset(host)
+	if err != nil {
+		return nil, err
+	}
+	userReq, err := request.NewUser(host)
+	if err != nil {
+		return nil, err
+	}
+	tradeReq, err := request.NewTrad(host)
 	if err != nil {
 		return nil, err
 	}
 	return &Client{
-		httpClient: http.DefaultClient,
-		host:       urlHost,
+		marketRequest:  marketReq,
+		accountRequest: accountReq,
+		assetRequest:   assetReq,
+		userRequest:    userReq,
+		traderRequest:  tradeReq,
+		sender:         sender,
 	}, nil
 }
-
-func (c *Client) WithHttpClient(httpClient *http.Client) {
-	c.httpClient = httpClient
+func (c *Client) WithSender(s sender.Sender) {
+	if s == nil {
+		return
+	}
+	c.sender = s
 }
-
 func (c *Client) SpotTicker(ctx context.Context) (TickerResponse, error) {
 	result := TickerResponse{}
-	urlReq := c.host.JoinPath("/v5/market/tickers")
-	q := urlReq.Query()
-	q.Set("category", "spot")
-	urlReq.RawQuery = q.Encode()
-	req, err := http.NewRequest(
-		http.MethodGet,
-		urlReq.String(),
-		nil,
-	)
+	req, err := c.marketRequest.GetTickers(ctx, "spot")
 	if err != nil {
 		return result, errors.Wrap(err, "error create request")
 	}
-	req.WithContext(ctx)
-	res, err := c.httpClient.Do(req)
+	res, err := c.sender.Send(req)
 	if err != nil {
 		return TickerResponse{}, errors.Wrap(err, "http client do")
 	}
@@ -55,5 +77,22 @@ func (c *Client) SpotTicker(ctx context.Context) (TickerResponse, error) {
 		return result, errors.Wrap(err, "error decode response")
 	}
 
+	return result, nil
+}
+
+func (c *Client) GetUIDWalletType(ctx context.Context, apiKey, apiSecret string) (response.WalletTypeResponse, error) {
+	var result response.WalletTypeResponse
+	req, err := c.userRequest.GetUIDWalletType(ctx, apiKey, apiSecret)
+	if err != nil {
+		return response.WalletTypeResponse{}, err
+	}
+	resp, err := c.sender.Send(req)
+	if err != nil {
+		return response.WalletTypeResponse{}, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return response.WalletTypeResponse{}, err
+	}
 	return result, nil
 }

@@ -117,3 +117,15 @@ func TestManager_FuturesPlaceMultipleOrders(t *testing.T) {
 		return
 	}
 }
+
+func TestManager_QuerySubAccountList(t *testing.T) {
+	c, err := NewManager("https://api.binance.com", "https://testnet.binancefuture.com")
+	if err != nil {
+		return
+	}
+	defer c.Close()
+	c.WithSender(sender.NewLogger(zap.L(), sender.NewBasic()))
+	c.QuerySubAccountList(
+		domain.CredentialDTO{APIKey: apiKeyFuture, ApiSecret: apiSecretFuture},
+	)
+}

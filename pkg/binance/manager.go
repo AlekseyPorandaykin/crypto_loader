@@ -15,10 +15,11 @@ import (
 type ResponseHandlerFunc func(r io.Reader) error
 
 type Manager struct {
-	personalSenders map[string]*sender.Personal
-	spotRequest     *requests.SpotRequest
-	futureRequest   *requests.FutureRequest
-	sender          sender.Sender
+	personalSenders   map[string]*sender.Personal
+	spotRequest       *requests.SpotRequest
+	futureRequest     *requests.FutureRequest
+	subAccountRequest *requests.SubAccount
+	sender            sender.Sender
 }
 
 func NewManager(spotHost string, futureHost string) (*Manager, error) {
@@ -30,11 +31,16 @@ func NewManager(spotHost string, futureHost string) (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
+	sa, err := requests.NewSubAccount(spotHost)
+	if err != nil {
+		return nil, err
+	}
 	return &Manager{
-		sender:          sender.NewBasic(),
-		personalSenders: make(map[string]*sender.Personal),
-		spotRequest:     sr,
-		futureRequest:   fr,
+		sender:            sender.NewBasic(),
+		personalSenders:   make(map[string]*sender.Personal),
+		spotRequest:       sr,
+		futureRequest:     fr,
+		subAccountRequest: sa,
 	}, nil
 }
 
@@ -241,6 +247,25 @@ func (m *Manager) FutureCandlestickData(ctx context.Context, symbol string, inte
 		})
 	}
 	return candlestickBarCollection, nil
+}
+
+func (m *Manager) GetDetailOnSubAccount(cred domain.CredentialDTO) (interface{}, error) {
+	req, weight, err := m.subAccountRequest.GetDetailOnSubAccount(cred.APIKey, cred.ApiSecret)
+	if err != nil {
+		return domain.ResponseOrderDTO{}, err
+	}
+	data, err := m.sendPersonalRequest(cred, req, weight)
+
+	return data, err
+}
+func (m *Manager) QuerySubAccountList(cred domain.CredentialDTO) (interface{}, error) {
+	req, weight, err := m.subAccountRequest.QuerySubAccountList(cred.APIKey, cred.ApiSecret)
+	if err != nil {
+		return domain.ResponseOrderDTO{}, err
+	}
+	data, err := m.sendPersonalRequest(cred, req, weight)
+
+	return data, err
 }
 
 func (m *Manager) executeRequest(req *http.Request, weight int, err error) ([]byte, error) {
