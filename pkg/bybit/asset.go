@@ -41,23 +41,32 @@ func (c *Client) assetInfo(ctx context.Context, apiKey, apiSecret string, accoun
 	return result.Result[strings.ToLower(string(accountType))].Assets, nil
 }
 
-func (c *Client) AssetContractCoinsBalance(ctx context.Context, apiKey, apiSecret string) (response.CoinBalanceResponse, error) {
+func (c *Client) AssetContractCoinsBalance(
+	ctx context.Context, apiKey, apiSecret string,
+) (response.CoinBalanceResponse, error) {
 	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.ContractAccountType)
 }
 
-func (c *Client) AssetUnifiedCoinsBalance(ctx context.Context, apiKey, apiSecret string) (response.CoinBalanceResponse, error) {
+func (c *Client) AssetUnifiedCoinsBalance(
+	ctx context.Context, apiKey, apiSecret string,
+) (response.CoinBalanceResponse, error) {
 	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.UnifiedAccountType)
 }
 
-func (c *Client) AssetFundCoinsBalance(ctx context.Context, apiKey, apiSecret string) (response.CoinBalanceResponse, error) {
+func (c *Client) AssetFundCoinsBalance(
+	ctx context.Context, apiKey, apiSecret string,
+) (response.CoinBalanceResponse, error) {
 	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.FundAccountType)
 }
 
-func (c *Client) AssetSpotCoinsBalance(ctx context.Context, apiKey, apiSecret string) (response.CoinBalanceResponse, error) {
+func (c *Client) AssetSpotCoinsBalance(
+	ctx context.Context, apiKey, apiSecret string,
+) (response.CoinBalanceResponse, error) {
 	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.SpotAccountType)
 }
 
-func (c *Client) AssetOptionCoinsBalance(ctx context.Context, apiKey, apiSecret string) (response.CoinBalanceResponse, error) {
+func (c *Client) AssetOptionCoinsBalance(
+	ctx context.Context, apiKey, apiSecret string) (response.CoinBalanceResponse, error) {
 	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.OptionAccountType)
 }
 
