@@ -10,12 +10,8 @@ type Market struct {
 	host *url.URL
 }
 
-func NewMarket(host string) (*Market, error) {
-	urlHost, err := url.Parse(host)
-	if err != nil {
-		return nil, err
-	}
-	return &Market{host: urlHost}, nil
+func NewMarket(host *url.URL) *Market {
+	return &Market{host: host}
 }
 
 func (r *Market) GetTickers(ctx context.Context, category string) (*http.Request, error) {

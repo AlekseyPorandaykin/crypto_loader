@@ -7,7 +7,15 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/response"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/sender"
 	"github.com/pkg/errors"
+	"net/http"
+	"net/url"
 )
+
+var CreateRequestErr = errors.New("error create request")
+
+func WrapCreateRequestErr(err error) error {
+	return errors.Wrap(err, CreateRequestErr.Error())
+}
 
 type Client struct {
 	sender sender.Sender
@@ -17,6 +25,7 @@ type Client struct {
 	assetRequest   *request.Asset
 	userRequest    *request.User
 	traderRequest  *request.Trade
+	positionReq    *request.Position
 }
 
 func DefaultClient(host string) (*Client, error) {
@@ -24,32 +33,17 @@ func DefaultClient(host string) (*Client, error) {
 }
 
 func NewClient(host string, sender sender.Sender) (*Client, error) {
-	marketReq, err := request.NewMarket(host)
-	if err != nil {
-		return nil, err
-	}
-	accountReq, err := request.NewAccount(host)
-	if err != nil {
-		return nil, err
-	}
-	assetReq, err := request.NewAsset(host)
-	if err != nil {
-		return nil, err
-	}
-	userReq, err := request.NewUser(host)
-	if err != nil {
-		return nil, err
-	}
-	tradeReq, err := request.NewTrad(host)
+	urlHost, err := url.Parse(host)
 	if err != nil {
 		return nil, err
 	}
 	return &Client{
-		marketRequest:  marketReq,
-		accountRequest: accountReq,
-		assetRequest:   assetReq,
-		userRequest:    userReq,
-		traderRequest:  tradeReq,
+		marketRequest:  request.NewMarket(urlHost),
+		accountRequest: request.NewAccount(urlHost),
+		assetRequest:   request.NewAsset(urlHost),
+		userRequest:    request.NewUser(urlHost),
+		traderRequest:  request.NewTrad(urlHost),
+		positionReq:    request.NewPosition(urlHost),
 		sender:         sender,
 	}, nil
 }
@@ -95,4 +89,20 @@ func (c *Client) GetUIDWalletType(ctx context.Context, apiKey, apiSecret string)
 		return response.WalletTypeResponse{}, err
 	}
 	return result, nil
+}
+
+// sendRequest - dest is pointer struct
+func (c *Client) sendRequest(req *http.Request, dest any) error {
+	res, err := c.sender.Send(req)
+	if err != nil {
+		return errors.Wrap(err, "http client do")
+	}
+	if res.Body == nil {
+		return errors.New("empty body response")
+	}
+	defer func() { _ = res.Body.Close() }()
+	if err := json.NewDecoder(res.Body).Decode(dest); err != nil {
+		return errors.Wrap(err, "error decode response")
+	}
+	return nil
 }

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/response"
+	"github.com/pkg/errors"
+	"io"
 	"strings"
 )
 
@@ -59,5 +61,62 @@ func (c *Client) coinsBalance(ctx context.Context, apiKey, apiSecret string, acc
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return response.CoinBalanceResponse{}, err
 	}
+	return result, nil
+}
+
+func (c *Client) AssetCoinExchangeRecords(ctx context.Context, apiKey, apiSecret string) (any, error) {
+	req, err := c.assetRequest.GetCoinExchangeRecords(ctx, apiKey, apiSecret)
+	if err != nil {
+		return nil, errors.Wrap(err, "error create request")
+	}
+	res, err := c.sender.Send(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "http client do")
+	}
+	if res.Body == nil {
+		return nil, errors.New("empty body response")
+	}
+	defer func() { _ = res.Body.Close() }()
+	data, err := io.ReadAll(res.Body)
+
+	return data, err
+}
+func (c *Client) AssetInternalTransferRecords(
+	ctx context.Context, apiKey, apiSecret string,
+) (response.InternalTransferRecordsResponse, error) {
+	req, err := c.assetRequest.GetInternalTransferRecords(ctx, apiKey, apiSecret)
+	if err != nil {
+		return response.InternalTransferRecordsResponse{}, WrapCreateRequestErr(err)
+	}
+	result := response.InternalTransferRecordsResponse{}
+	if err := c.sendRequest(req, &result); err != nil {
+		return response.InternalTransferRecordsResponse{}, err
+	}
+
+	return result, nil
+}
+func (c *Client) AssetWithdrawalRecords(ctx context.Context, apiKey, apiSecret string) (response.WithdrawalRecordsResponse, error) {
+	req, err := c.assetRequest.GetWithdrawalRecords(ctx, apiKey, apiSecret)
+	if err != nil {
+		return response.WithdrawalRecordsResponse{}, errors.Wrap(err, "error create request")
+	}
+	result := response.WithdrawalRecordsResponse{}
+	if err := c.sendRequest(req, &result); err != nil {
+		return response.WithdrawalRecordsResponse{}, err
+	}
+
+	return result, nil
+}
+
+func (c *Client) AssetUniversalTransferRecords(ctx context.Context, apiKey, apiSecret string) (any, error) {
+	req, err := c.assetRequest.GetUniversalTransferRecords(ctx, apiKey, apiSecret)
+	if err != nil {
+		return nil, errors.Wrap(err, "error create request")
+	}
+	result := make(map[string]interface{})
+	if err := c.sendRequest(req, &result); err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }

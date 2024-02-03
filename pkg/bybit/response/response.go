@@ -151,3 +151,106 @@ type TradeHistoryResponse struct {
 	CommonResponse
 	Result TradeHistory `json:"result"`
 }
+
+type OpenOrder struct {
+	OrderLinkID        string `json:"orderLinkId"`
+	OrderID            string `json:"orderId"`
+	BlockTradeID       string `json:"blockTradeId"`
+	Symbol             string `json:"symbol"`
+	Price              string `json:"price"`
+	PositionIdx        int    `json:"positionIdx"`
+	Qty                string `json:"qty"`
+	Side               string `json:"side"`
+	IsLeverage         string `json:"isLeverage"`
+	OrderStatus        string `json:"orderStatus"`
+	CreateType         string `json:"createType"`
+	CancelType         string `json:"cancelType"`
+	RejectReason       string `json:"rejectReason"`
+	AvgPrice           string `json:"avgPrice"`
+	LeavesQty          string `json:"leavesQty"`
+	LeavesValue        string `json:"leavesValue"`
+	CumExecQty         string `json:"cumExecQty"`
+	CumExecValue       string `json:"cumExecValue"`
+	CumExecFee         string `json:"cumExecFee"`
+	TimeInForce        string `json:"timeInForce"`
+	OrderType          string `json:"orderType"`
+	StopOrderType      string `json:"stopOrderType"`
+	OrderIv            string `json:"orderIv"`
+	MarketUnit         string `json:"marketUnit"`
+	TriggerPrice       string `json:"triggerPrice"`
+	TakeProfit         string `json:"takeProfit"`
+	TpslMode           string `json:"tpslMode"`
+	OcoTriggerType     string `json:"ocoTriggerType"`
+	TpLimitPrice       string `json:"tpLimitPrice"`
+	SlLimitPrice       string `json:"slLimitPrice"`
+	StopLoss           string `json:"stopLoss"`
+	TpTriggerBy        string `json:"tpTriggerBy"`
+	SlTriggerBy        string `json:"slTriggerBy"`
+	TriggerDirection   int    `json:"triggerDirection"`
+	TriggerBy          string `json:"triggerBy"`
+	LastPriceOnCreated string `json:"lastPriceOnCreated"`
+	ReduceOnly         bool   `json:"reduceOnly"`
+	CloseOnTrigger     bool   `json:"closeOnTrigger"`
+	PlaceType          string `json:"placeType"`
+	CreatedTime        string `json:"createdTime"`
+	UpdatedTime        string `json:"updatedTime"`
+	SmpType            string `json:"smpType"`
+	SmpGroup           int    `json:"smpGroup"`
+	SmpOrderId         string `json:"smpOrderId"`
+}
+
+type TradeOpenOrders struct {
+	NextPageCursor string      `json:"nextPageCursor"`
+	Category       string      `json:"category"`
+	List           []OpenOrder `json:"list"`
+}
+
+type TradeOpenOrdersResponse struct {
+	CommonResponse
+	Result TradeOpenOrders `json:"result"`
+}
+
+type InternalTransferRecord struct {
+	TransferID      string `json:"transferId"`
+	Coin            string `json:"coin"`
+	Amount          string `json:"amount"`
+	FromAccountType string `json:"fromAccountType"`
+	ToAccountType   string `json:"toAccountType"`
+	Timestamp       string `json:"timestamp"`
+	Status          string `json:"status"`
+}
+
+type InternalTransferRecords struct {
+	List           []InternalTransferRecord `json:"list"`
+	NextPageCursor string                   `json:"nextPageCursor"`
+}
+
+type InternalTransferRecordsResponse struct {
+	CommonResponse
+	Result InternalTransferRecords `json:"result"`
+}
+
+type WithdrawalRecord struct {
+	WithdrawId   string `json:"withdrawId"`
+	TxID         string `json:"txID"`
+	WithdrawType int    `json:"withdrawType"`
+	Coin         string `json:"coin"`
+	Chain        string `json:"chain"`
+	Amount       string `json:"amount"`
+	WithdrawFee  string `json:"withdrawFee"`
+	Status       string `json:"status"`
+	ToAddress    string `json:"toAddress"`
+	Tag          string `json:"tag"`
+	CreateTime   string `json:"createTime"`
+	UpdateTime   string `json:"updateTime"`
+}
+
+type WithdrawalRecords struct {
+	Rows           []WithdrawalRecord `json:"rows"`
+	NextPageCursor string             `json:"nextPageCursor"`
+}
+
+type WithdrawalRecordsResponse struct {
+	CommonResponse
+	Result WithdrawalRecords `json:"result"`
+}

@@ -11,18 +11,20 @@ type Trade struct {
 	host *url.URL
 }
 
-func NewTrad(host string) (*Trade, error) {
-	urlHost, err := url.Parse(host)
-	if err != nil {
-		return nil, err
-	}
-	return &Trade{host: urlHost}, nil
+func NewTrad(host *url.URL) *Trade {
+	return &Trade{host: host}
 }
 
-func (r *Trade) GetOpenOrders(ctx context.Context, apiKey, apiSecret string) (*http.Request, error) {
+func (r *Trade) GetOpenOrders(
+	ctx context.Context, apiKey, apiSecret string, category domain.OrderCategory,
+) (*http.Request, error) {
 	return personalRequest(
 		ctx,
-		Request{Url: r.host.JoinPath("/v5/order/realtime").String(), Method: http.MethodGet},
+		Request{
+			Url:    r.host.JoinPath("/v5/order/realtime").String(),
+			Method: http.MethodGet,
+			Params: []Param{{Key: "category", Value: string(category)}},
+		},
 		apiKey,
 		apiSecret,
 	)

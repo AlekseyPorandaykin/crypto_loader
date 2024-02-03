@@ -10,12 +10,8 @@ type User struct {
 	host *url.URL
 }
 
-func NewUser(host string) (*User, error) {
-	urlHost, err := url.Parse(host)
-	if err != nil {
-		return nil, err
-	}
-	return &User{host: urlHost}, nil
+func NewUser(host *url.URL) *User {
+	return &User{host: host}
 }
 
 func (r *User) GetUIDWalletType(ctx context.Context, apiKey, apiSecret string) (*http.Request, error) {

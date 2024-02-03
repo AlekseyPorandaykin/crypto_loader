@@ -5,22 +5,40 @@ import (
 	"encoding/json"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/response"
-	"io"
 )
 
-func (c *Client) TradeOpenOrders(ctx context.Context, apiKey, apiSecret string) (any, error) {
-	req, err := c.traderRequest.GetOpenOrders(ctx, apiKey, apiSecret)
+func (c *Client) TradeSpotOpenOrders(ctx context.Context, apiKey, apiSecret string) (response.TradeOpenOrdersResponse, error) {
+	return c.tradeOpenOrders(ctx, apiKey, apiSecret, domain.SpotOrderCategory)
+}
+
+func (c *Client) TradeLinearOpenOrders(ctx context.Context, apiKey, apiSecret string) (response.TradeOpenOrdersResponse, error) {
+	return c.tradeOpenOrders(ctx, apiKey, apiSecret, domain.LinearOrderCategory)
+}
+
+func (c *Client) TradeInverseOpenOrders(ctx context.Context, apiKey, apiSecret string) (response.TradeOpenOrdersResponse, error) {
+	return c.tradeOpenOrders(ctx, apiKey, apiSecret, domain.InverseOrderCategory)
+}
+
+func (c *Client) TradeOptionOpenOrders(ctx context.Context, apiKey, apiSecret string) (response.TradeOpenOrdersResponse, error) {
+	return c.tradeOpenOrders(ctx, apiKey, apiSecret, domain.OptionOrderCategory)
+}
+
+func (c *Client) tradeOpenOrders(ctx context.Context, apiKey, apiSecret string, category domain.OrderCategory) (response.TradeOpenOrdersResponse, error) {
+	req, err := c.traderRequest.GetOpenOrders(ctx, apiKey, apiSecret, category)
 	if err != nil {
-		return nil, err
+		return response.TradeOpenOrdersResponse{}, err
 	}
 
 	resp, err := c.sender.Send(req)
 	if err != nil {
-		return nil, err
+		return response.TradeOpenOrdersResponse{}, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	data, err := io.ReadAll(resp.Body)
-	return data, err
+	result := response.TradeOpenOrdersResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return response.TradeOpenOrdersResponse{}, err
+	}
+	return result, err
 }
 func (c *Client) TradeSpotOrderHistory(
 	ctx context.Context, apiKey, apiSecret string,
@@ -83,6 +101,7 @@ func (c *Client) TradeInverseHistory(
 	return c.tradeHistory(ctx, apiKey, apiSecret, domain.InverseOrderCategory)
 }
 
+// TradeOptionHistory - Error execute (404)
 func (c *Client) TradeOptionHistory(
 	ctx context.Context, apiKey, apiSecret string,
 ) (response.TradeHistoryResponse, error) {
@@ -94,7 +113,7 @@ func (c *Client) tradeHistory(
 ) (response.TradeHistoryResponse, error) {
 	req, err := c.traderRequest.GetTradeHistory(ctx, apiKey, apiSecret, category)
 	if err != nil {
-		return response.TradeHistoryResponse{}, err
+		return response.TradeHistoryResponse{}, WrapCreateRequestErr(err)
 	}
 	resp, err := c.sender.Send(req)
 	if err != nil {
