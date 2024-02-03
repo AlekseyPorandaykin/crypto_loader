@@ -2,7 +2,6 @@ package bybit
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/response"
 	"github.com/pkg/errors"
@@ -34,32 +33,44 @@ func (c *Client) assetInfo(ctx context.Context, apiKey, apiSecret string, accoun
 	var result response.AssetResponse
 	req, err := c.assetRequest.GetAssetInfo(ctx, apiKey, apiSecret, accountType)
 	if err != nil {
-		return nil, err
+		return nil, WrapCreateRequestErr(err)
 	}
-	resp, err := c.sender.Send(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.sendRequest(req, &result); err != nil {
 		return nil, err
 	}
 	return result.Result[strings.ToLower(string(accountType))].Assets, nil
 }
 
-func (c *Client) coinsBalance(ctx context.Context, apiKey, apiSecret string, accountType domain.AccountType) (response.CoinBalanceResponse, error) {
+func (c *Client) AssetContractCoinsBalance(ctx context.Context, apiKey, apiSecret string) (response.CoinBalanceResponse, error) {
+	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.ContractAccountType)
+}
+
+func (c *Client) AssetUnifiedCoinsBalance(ctx context.Context, apiKey, apiSecret string) (response.CoinBalanceResponse, error) {
+	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.UnifiedAccountType)
+}
+
+func (c *Client) AssetFundCoinsBalance(ctx context.Context, apiKey, apiSecret string) (response.CoinBalanceResponse, error) {
+	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.FundAccountType)
+}
+
+func (c *Client) AssetSpotCoinsBalance(ctx context.Context, apiKey, apiSecret string) (response.CoinBalanceResponse, error) {
+	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.SpotAccountType)
+}
+
+func (c *Client) AssetOptionCoinsBalance(ctx context.Context, apiKey, apiSecret string) (response.CoinBalanceResponse, error) {
+	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.OptionAccountType)
+}
+
+func (c *Client) assetCoinsBalance(
+	ctx context.Context, apiKey, apiSecret string, accountType domain.AccountType,
+) (response.CoinBalanceResponse, error) {
 	var result response.CoinBalanceResponse
 	req, err := c.assetRequest.GetAllCoinsBalance(ctx, apiKey, apiSecret, accountType)
 	if err != nil {
-		return response.CoinBalanceResponse{}, err
+		return response.CoinBalanceResponse{}, WrapCreateRequestErr(err)
 	}
-	resp, err := c.sender.Send(req)
-	if err != nil {
-		return response.CoinBalanceResponse{}, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return response.CoinBalanceResponse{}, err
+	if err := c.sendRequest(req, &result); err != nil {
+		return response.CoinBalanceResponse{}, nil
 	}
 	return result, nil
 }

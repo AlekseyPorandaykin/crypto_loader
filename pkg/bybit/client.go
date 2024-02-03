@@ -3,6 +3,7 @@ package bybit
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/request"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/response"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/sender"
@@ -103,6 +104,10 @@ func (c *Client) sendRequest(req *http.Request, dest any) error {
 	defer func() { _ = res.Body.Close() }()
 	if err := json.NewDecoder(res.Body).Decode(dest); err != nil {
 		return errors.Wrap(err, "error decode response")
+	}
+
+	if checker, ok := dest.(response.CheckerResponse); ok && !checker.IsOk() {
+		return fmt.Errorf("err message (%s)", checker.ErrMessage())
 	}
 	return nil
 }

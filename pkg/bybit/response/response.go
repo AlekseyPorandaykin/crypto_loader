@@ -1,6 +1,14 @@
 package response
 
-import "github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/domain"
+import (
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/domain"
+	"strings"
+)
+
+type CheckerResponse interface {
+	IsOk() bool
+	ErrMessage() string
+}
 
 type CommonResponse struct {
 	//https://bybit-exchange.github.io/docs/v5/error#uma--uta--futures-of-classic-account
@@ -9,6 +17,16 @@ type CommonResponse struct {
 	Result     interface{} `json:"result"`     //Business data result
 	ExtendInfo interface{} `json:"retExtInfo"` //Extend info. Most of the time, it is {}
 	Time       int         `json:"time"`       //Current timestamp (ms)
+}
+
+func (resp CommonResponse) IsOk() bool {
+	return resp.Code == 0
+}
+func (resp CommonResponse) ErrMessage() string {
+	if strings.ToLower(resp.Message) == "success" || strings.ToLower(resp.Message) == "ok" {
+		return ""
+	}
+	return resp.Message
 }
 
 type AccountAssets struct {
