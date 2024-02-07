@@ -2,7 +2,7 @@ package request
 
 import (
 	"context"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"net/http"
 	"net/url"
 )
@@ -31,31 +31,31 @@ func (r *Trade) GetOpenOrders(
 }
 
 func (r *Trade) GetOrderHistory(
-	ctx context.Context, apiKey, apiSecret string, category domain.OrderCategory,
+	ctx context.Context, cred CredentialParam, param TradeOrderHistoryParam,
 ) (*http.Request, error) {
 	return personalRequest(
 		ctx,
 		Request{
 			Url:    r.host.JoinPath("/v5/order/history").String(),
 			Method: http.MethodGet,
-			Params: []Param{{Key: "category", Value: string(category)}},
+			Params: param.Params(),
 		},
-		apiKey,
-		apiSecret,
+		cred.ApiKey,
+		cred.ApiSecret,
 	)
 }
 
 func (r *Trade) GetTradeHistory(
-	ctx context.Context, apiKey, apiSecret string, category domain.OrderCategory,
+	ctx context.Context, cred CredentialParam, param TradeHistoryParam,
 ) (*http.Request, error) {
 	return personalRequest(
 		ctx,
 		Request{
 			Url:    r.host.JoinPath("/v5/execution/list").String(),
 			Method: http.MethodGet,
-			Params: []Param{{Key: "category", Value: string(category)}},
+			Params: param.Params(),
 		},
-		apiKey,
-		apiSecret,
+		cred.ApiKey,
+		cred.ApiSecret,
 	)
 }

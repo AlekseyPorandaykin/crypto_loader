@@ -1,9 +1,10 @@
-package bybit
+package v5
 
 import (
 	"context"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/domain"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/response"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/request"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/response"
 	"github.com/pkg/errors"
 	"io"
 	"strings"
@@ -115,8 +116,10 @@ func (c *Client) AssetInternalTransferRecords(
 
 	return result, nil
 }
-func (c *Client) AssetWithdrawalRecords(ctx context.Context, apiKey, apiSecret string) (response.WithdrawalRecordsResponse, error) {
-	req, err := c.assetRequest.GetWithdrawalRecords(ctx, apiKey, apiSecret)
+func (c *Client) AssetWithdrawalRecords(
+	ctx context.Context, cred request.CredentialParam, param request.AssetWithdrawalRecordsParam,
+) (response.WithdrawalRecordsResponse, error) {
+	req, err := c.assetRequest.GetWithdrawalRecords(ctx, cred, param)
 	if err != nil {
 		return response.WithdrawalRecordsResponse{}, errors.Wrap(err, "error create request")
 	}
@@ -125,6 +128,17 @@ func (c *Client) AssetWithdrawalRecords(ctx context.Context, apiKey, apiSecret s
 		return response.WithdrawalRecordsResponse{}, err
 	}
 
+	return result, nil
+}
+func (c *Client) AssetDepositRecords(ctx context.Context, cred request.CredentialParam, param request.GetDepositRecordParam) (CommonResponse, error) {
+	req, err := c.assetRequest.GetDepositRecords(ctx, cred, param)
+	if err != nil {
+		return CommonResponse{}, WrapCreateRequestErr(err)
+	}
+	result := CommonResponse{}
+	if err := c.sendRequest(req, &result); err != nil {
+		return CommonResponse{}, err
+	}
 	return result, nil
 }
 

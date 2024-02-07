@@ -1,10 +1,11 @@
-package bybit
+package v5
 
 import (
 	"context"
 	"encoding/json"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/domain"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/response"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/request"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/response"
 )
 
 func (c *Client) TradeSpotOpenOrders(ctx context.Context, apiKey, apiSecret string) (response.TradeOpenOrdersResponse, error) {
@@ -41,32 +42,32 @@ func (c *Client) tradeOpenOrders(ctx context.Context, apiKey, apiSecret string, 
 	return result, err
 }
 func (c *Client) TradeSpotOrderHistory(
-	ctx context.Context, apiKey, apiSecret string,
+	ctx context.Context, cred request.CredentialParam,
 ) (response.TradeOrderHistoryResponse, error) {
-	return c.tradeOrderHistory(ctx, apiKey, apiSecret, domain.SpotOrderCategory)
+	return c.TradeOrderHistory(ctx, cred, request.TradeOrderHistoryParam{Category: domain.SpotOrderCategory})
 }
 
 func (c *Client) TradeLinearOrderHistory(
-	ctx context.Context, apiKey, apiSecret string,
+	ctx context.Context, cred request.CredentialParam,
 ) (response.TradeOrderHistoryResponse, error) {
-	return c.tradeOrderHistory(ctx, apiKey, apiSecret, domain.LinearOrderCategory)
+	return c.TradeOrderHistory(ctx, cred, request.TradeOrderHistoryParam{Category: domain.LinearOrderCategory})
 }
 
 func (c *Client) TradeInverseOrderHistory(
-	ctx context.Context, apiKey, apiSecret string,
+	ctx context.Context, cred request.CredentialParam,
 ) (response.TradeOrderHistoryResponse, error) {
-	return c.tradeOrderHistory(ctx, apiKey, apiSecret, domain.InverseOrderCategory)
+	return c.TradeOrderHistory(ctx, cred, request.TradeOrderHistoryParam{Category: domain.InverseOrderCategory})
 }
 func (c *Client) TradeOptionOrderHistory(
-	ctx context.Context, apiKey, apiSecret string,
+	ctx context.Context, cred request.CredentialParam,
 ) (response.TradeOrderHistoryResponse, error) {
-	return c.tradeOrderHistory(ctx, apiKey, apiSecret, domain.OptionOrderCategory)
+	return c.TradeOrderHistory(ctx, cred, request.TradeOrderHistoryParam{Category: domain.OptionOrderCategory})
 }
 
-func (c *Client) tradeOrderHistory(
-	ctx context.Context, apiKey, apiSecret string, category domain.OrderCategory,
+func (c *Client) TradeOrderHistory(
+	ctx context.Context, cred request.CredentialParam, param request.TradeOrderHistoryParam,
 ) (response.TradeOrderHistoryResponse, error) {
-	req, err := c.traderRequest.GetOrderHistory(ctx, apiKey, apiSecret, category)
+	req, err := c.traderRequest.GetOrderHistory(ctx, cred, param)
 	if err != nil {
 		return response.TradeOrderHistoryResponse{}, err
 	}
@@ -84,34 +85,35 @@ func (c *Client) tradeOrderHistory(
 }
 
 func (c *Client) TradeSpotHistory(
-	ctx context.Context, apiKey, apiSecret string,
+	ctx context.Context, cred request.CredentialParam,
 ) (response.TradeHistoryResponse, error) {
-	return c.tradeHistory(ctx, apiKey, apiSecret, domain.SpotOrderCategory)
+
+	return c.TradeHistory(ctx, cred, request.TradeHistoryParam{Category: domain.SpotOrderCategory})
 }
 
 func (c *Client) TradeLinearHistory(
-	ctx context.Context, apiKey, apiSecret string,
+	ctx context.Context, cred request.CredentialParam,
 ) (response.TradeHistoryResponse, error) {
-	return c.tradeHistory(ctx, apiKey, apiSecret, domain.LinearOrderCategory)
+	return c.TradeHistory(ctx, cred, request.TradeHistoryParam{Category: domain.LinearOrderCategory})
 }
 
 func (c *Client) TradeInverseHistory(
-	ctx context.Context, apiKey, apiSecret string,
+	ctx context.Context, cred request.CredentialParam,
 ) (response.TradeHistoryResponse, error) {
-	return c.tradeHistory(ctx, apiKey, apiSecret, domain.InverseOrderCategory)
+	return c.TradeHistory(ctx, cred, request.TradeHistoryParam{Category: domain.InverseOrderCategory})
 }
 
 // TradeOptionHistory - Error execute (404)
 func (c *Client) TradeOptionHistory(
-	ctx context.Context, apiKey, apiSecret string,
+	ctx context.Context, cred request.CredentialParam,
 ) (response.TradeHistoryResponse, error) {
-	return c.tradeHistory(ctx, apiKey, apiSecret, domain.OptionOrderCategory)
+	return c.TradeHistory(ctx, cred, request.TradeHistoryParam{Category: domain.OptionOrderCategory})
 }
 
-func (c *Client) tradeHistory(
-	ctx context.Context, apiKey, apiSecret string, category domain.OrderCategory,
+func (c *Client) TradeHistory(
+	ctx context.Context, cred request.CredentialParam, param request.TradeHistoryParam,
 ) (response.TradeHistoryResponse, error) {
-	req, err := c.traderRequest.GetTradeHistory(ctx, apiKey, apiSecret, category)
+	req, err := c.traderRequest.GetTradeHistory(ctx, cred, param)
 	if err != nil {
 		return response.TradeHistoryResponse{}, WrapCreateRequestErr(err)
 	}

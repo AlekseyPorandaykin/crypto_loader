@@ -5,23 +5,23 @@ import (
 	"fmt"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/dto"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 	"time"
 )
 
 type ByBit struct {
-	client *bybit.Client
+	client *v5.Client
 }
 
-func NewByBit(client *bybit.Client) *ByBit {
+func NewByBit(client *v5.Client) *ByBit {
 	return &ByBit{client: client}
 }
 
 func (c *ByBit) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
 	result := make([]domain.SymbolPrice, 0, 500)
-	var tickerResp bybit.TickerResponse
+	var tickerResp v5.TickerResponse
 	err := backoff.Retry(func() error {
 		var err error
 		tickerResp, err = c.client.SpotTicker(ctx)

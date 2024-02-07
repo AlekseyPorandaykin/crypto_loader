@@ -1,4 +1,4 @@
-package bybit
+package v5
 
 type CommonResponse struct {
 	//https://bybit-exchange.github.io/docs/v5/error#uma--uta--futures-of-classic-account

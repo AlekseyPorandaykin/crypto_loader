@@ -1,7 +1,7 @@
 package response
 
 import (
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"strings"
 )
 
@@ -271,4 +271,37 @@ type WithdrawalRecords struct {
 type WithdrawalRecordsResponse struct {
 	CommonResponse
 	Result WithdrawalRecords `json:"result"`
+}
+
+type TransactionLog struct {
+	ID              string `json:"id"`
+	Symbol          string `json:"symbol"`
+	Category        string `json:"category"`
+	Side            string `json:"side"`
+	TransactionTime string `json:"transactionTime"`
+	Qty             string `json:"qty"`
+	Size            string `json:"size"`
+	Currency        string `json:"currency"`
+	TradePrice      string `json:"tradePrice"`
+	Funding         string `json:"funding"`
+	Fee             string `json:"fee"`
+	CashFlow        string `json:"cashFlow"`
+	Change          string `json:"change"`
+	CashBalance     string `json:"cashBalance"`
+	FeeRate         string `json:"feeRate"`
+	BonusChange     string `json:"bonusChange"`
+	TradeID         string `json:"tradeId"`
+	OrderID         string `json:"orderId"`
+	OrderLinkID     string `json:"orderLinkId"`
+	Type            string `json:"type"`
+}
+
+type TransactionLogs struct {
+	List           []TransactionLog `json:"list"`
+	NextPageCursor string           `json:"nextPageCursor"`
+}
+
+type TransactionLogsResponse struct {
+	CommonResponse
+	Result TransactionLogs `json:"result"`
 }

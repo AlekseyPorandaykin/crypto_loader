@@ -1,12 +1,12 @@
-package bybit
+package v5
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/request"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/response"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/sender"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/request"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/response"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/sender"
 	"github.com/pkg/errors"
 	"net/http"
 	"net/url"

@@ -2,9 +2,10 @@ package request
 
 import (
 	"context"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 type Asset struct {
@@ -44,11 +45,36 @@ func (r *Asset) GetInternalTransferRecords(ctx context.Context, apiKey, apiSecre
 	}, apiKey, apiSecret)
 }
 
-func (r *Asset) GetWithdrawalRecords(ctx context.Context, apiKey, apiSecret string) (*http.Request, error) {
+func (r *Asset) GetWithdrawalRecords(ctx context.Context, cred CredentialParam, param AssetWithdrawalRecordsParam) (*http.Request, error) {
 	return personalRequest(ctx, Request{
 		Url:    r.host.JoinPath("/v5/asset/withdraw/query-record").String(),
 		Method: http.MethodGet,
-	}, apiKey, apiSecret)
+		Params: param.Params(),
+	}, cred.ApiKey, cred.ApiSecret)
+}
+
+func (r *Asset) GetDepositRecords(ctx context.Context, cred CredentialParam, param GetDepositRecordParam) (*http.Request, error) {
+	var params []Param
+	if param.Coin != "" {
+		params = append(params, Param{Key: "coin", Value: param.Coin})
+	}
+	if !param.StartTime.IsZero() {
+		params = append(params, Param{Key: "startTime", Value: strconv.Itoa(int(param.StartTime.UnixMilli()))})
+	}
+	if !param.EndTime.IsZero() {
+		params = append(params, Param{Key: "endTime", Value: strconv.Itoa(int(param.EndTime.UnixMilli()))})
+	}
+	if param.Limit > 0 {
+		params = append(params, Param{Key: "limit", Value: strconv.Itoa(param.Limit)})
+	}
+	if param.Cursor != "" {
+		params = append(params, Param{Key: "cursor", Value: param.Cursor})
+	}
+	return personalRequest(ctx, Request{
+		Url:    r.host.JoinPath("/v5/asset/deposit/query-record").String(),
+		Method: http.MethodGet,
+		Params: params,
+	}, cred.ApiKey, cred.ApiSecret)
 }
 func (r *Asset) GetUniversalTransferRecords(ctx context.Context, apiKey, apiSecret string) (*http.Request, error) {
 	return personalRequest(ctx, Request{

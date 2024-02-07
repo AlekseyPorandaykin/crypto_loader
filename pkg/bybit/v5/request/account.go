@@ -2,7 +2,7 @@ package request
 
 import (
 	"context"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"net/http"
 	"net/url"
 )
@@ -32,9 +32,12 @@ func (r *Account) GetAccountInfo(ctx context.Context, apiKey, apiSecret string) 
 	}, apiKey, apiSecret)
 }
 
-func (r *Account) GetTransactionLog(ctx context.Context, apiKey, apiSecret string) (*http.Request, error) {
+func (r *Account) GetTransactionLog(
+	ctx context.Context, cred CredentialParam, param AccountTransactionLogParam,
+) (*http.Request, error) {
 	return personalRequest(ctx, Request{
 		Url:    r.host.JoinPath("/v5/account/transaction-log").String(),
 		Method: http.MethodGet,
-	}, apiKey, apiSecret)
+		Params: param.Params(),
+	}, cred.ApiKey, cred.ApiSecret)
 }
