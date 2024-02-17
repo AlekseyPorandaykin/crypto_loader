@@ -95,7 +95,7 @@ var rootCmd = &cobra.Command{
 		//Repository
 		priceRepo := repositories.NewPriceRepository(db)
 		//Storage
-		priceStorage := storage.NewPriceStorage(priceRepo, priceRepo)
+		priceStorage := storage.NewPriceStorage(priceRepo)
 		symbolStorage := storage.NewSymbol()
 		candleStorage := storage.NewCandlestick()
 

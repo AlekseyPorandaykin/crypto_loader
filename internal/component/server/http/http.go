@@ -49,7 +49,6 @@ func (s *Server) Run() error {
 	s.e.GET("/price/:symbol", s.symbolPrice)
 	s.e.POST("/order", s.createOrder)
 	s.e.GET("/snapshot/:exchange/:symbol", s.snapshot)
-	s.e.GET("/price/first/:exchange/:symbol", s.firstSymbolPrice)
 	s.e.GET("/candlesticks/:interval/:exchange/:symbol", s.candlesticks)
 
 	return s.e.Start(s.host)
@@ -130,22 +129,6 @@ func (s *Server) candlesticks(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, snapshot)
 	}
 	return c.JSON(http.StatusOK, snapshot)
-}
-
-func (s *Server) firstSymbolPrice(c echo.Context) error {
-	symbol := c.Param("symbol")
-	if symbol == "" {
-		return errors.New("empty symbol")
-	}
-	exchange := c.Param("exchange")
-	if symbol == "" {
-		return errors.New("empty exchange")
-	}
-	prices, err := s.priceStorage.FirstSymbolPrice(c.Request().Context(), exchange, symbol)
-	if err != nil {
-		return err
-	}
-	return c.JSON(http.StatusOK, prices)
 }
 
 func (s *Server) Close() {
