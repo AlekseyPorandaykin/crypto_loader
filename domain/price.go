@@ -17,4 +17,5 @@ type PriceStorage interface {
 	SavePrices(ctx context.Context, prices []SymbolPrice) error
 	LastPrices(ctx context.Context) ([]SymbolPrice, error)
 	SymbolPrice(ctx context.Context, symbol string) ([]SymbolPrice, error)
+	ExchangePrice(ctx context.Context, exchange string) ([]SymbolPrice, error)
 }

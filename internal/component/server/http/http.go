@@ -47,6 +47,7 @@ func (s *Server) Run() error {
 	})
 	s.e.GET("/prices", s.prices)
 	s.e.GET("/price/:symbol", s.symbolPrice)
+	s.e.GET("/price/exchange/:exchange", s.exchangePrice)
 	s.e.POST("/order", s.createOrder)
 	s.e.GET("/snapshot/:exchange/:symbol", s.snapshot)
 	s.e.GET("/candlesticks/:interval/:exchange/:symbol", s.candlesticks)
@@ -68,6 +69,21 @@ func (s *Server) symbolPrice(c echo.Context) error {
 		return errors.New("empty symbol")
 	}
 	prices, err := s.priceStorage.SymbolPrice(c.Request().Context(), symbol)
+	if err != nil {
+		return err
+	}
+	if len(prices) == 0 {
+		return c.JSON(http.StatusNotFound, prices)
+	}
+	return c.JSON(http.StatusOK, prices)
+}
+
+func (s *Server) exchangePrice(c echo.Context) error {
+	exchange := c.Param("exchange")
+	if exchange == "" {
+		return errors.New("empty exchange")
+	}
+	prices, err := s.priceStorage.ExchangePrice(c.Request().Context(), exchange)
 	if err != nil {
 		return err
 	}

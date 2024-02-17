@@ -37,7 +37,7 @@ func NewEventServiceClient(cc grpc.ClientConnInterface) EventServiceClient {
 
 func (c *eventServiceClient) Prices(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*SymbolPrices, error) {
 	out := new(SymbolPrices)
-	err := c.cc.Invoke(ctx, "/event.EventService/Prices", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/event.EventService/SymbolPrices", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ type UnimplementedEventServiceServer struct {
 }
 
 func (UnimplementedEventServiceServer) Prices(context.Context, *EmptyRequest) (*SymbolPrices, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Prices not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method SymbolPrices not implemented")
 }
 func (UnimplementedEventServiceServer) SymbolPrice(context.Context, *SymbolPriceRequest) (*SymbolPrices, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SymbolPrice not implemented")
@@ -131,7 +131,7 @@ func _EventService_Prices_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/event.EventService/Prices",
+		FullMethod: "/event.EventService/SymbolPrices",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(EventServiceServer).Prices(ctx, req.(*EmptyRequest))
@@ -186,7 +186,7 @@ var EventService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*EventServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Prices",
+			MethodName: "SymbolPrices",
 			Handler:    _EventService_Prices_Handler,
 		},
 		{

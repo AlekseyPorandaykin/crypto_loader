@@ -70,3 +70,14 @@ func (repo *PriceRepository) SymbolPrice(ctx context.Context, symbol string) ([]
 	}
 	return prices, nil
 }
+
+func (repo *PriceRepository) ExchangePrice(ctx context.Context, exchange string) ([]domain.SymbolPrice, error) {
+	var (
+		prices = make([]domain.SymbolPrice, 0, 300_000)
+		query  = `SELECT price, symbol, exchange, datetime, updated_at FROM crypto_loader.prices WHERE exchange=$1 ORDER BY datetime`
+	)
+	if err := repo.db.SelectContext(ctx, &prices, query, exchange); err != nil {
+		return nil, err
+	}
+	return prices, nil
+}

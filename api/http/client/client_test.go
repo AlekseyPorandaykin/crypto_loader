@@ -6,8 +6,13 @@ import (
 	"testing"
 )
 
-func TestClient_Prices(t *testing.T) {
-	prices, err := DefaultClient().Prices(context.TODO(), "BTCUSDT")
+func TestClient_SymbolPrices(t *testing.T) {
+	prices, err := DefaultClient().SymbolPrices(context.TODO(), "BTCUSDT")
+	require.NoError(t, err)
+	require.NotEmpty(t, prices)
+}
+func TestClient_ExchangePrices(t *testing.T) {
+	prices, err := DefaultClient().ExchangePrices(context.TODO(), "bybit")
 	require.NoError(t, err)
 	require.NotEmpty(t, prices)
 }

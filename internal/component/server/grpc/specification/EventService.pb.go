@@ -338,10 +338,10 @@ var file_api_grpc_EventService_proto_goTypes = []interface{}{
 var file_api_grpc_EventService_proto_depIdxs = []int32{
 	5, // 0: event.SymbolPrice.date:type_name -> google.protobuf.Timestamp
 	0, // 1: event.SymbolPrices.prices:type_name -> event.SymbolPrice
-	2, // 2: event.EventService.Prices:input_type -> event.EmptyRequest
+	2, // 2: event.EventService.SymbolPrices:input_type -> event.EmptyRequest
 	3, // 3: event.EventService.SymbolPrice:input_type -> event.SymbolPriceRequest
 	4, // 4: event.EventService.TickerPrices:input_type -> event.DurationSeconds
-	1, // 5: event.EventService.Prices:output_type -> event.SymbolPrices
+	1, // 5: event.EventService.SymbolPrices:output_type -> event.SymbolPrices
 	1, // 6: event.EventService.SymbolPrice:output_type -> event.SymbolPrices
 	1, // 7: event.EventService.TickerPrices:output_type -> event.SymbolPrices
 	5, // [5:8] is the sub-list for method output_type

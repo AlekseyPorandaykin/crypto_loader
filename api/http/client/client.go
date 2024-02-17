@@ -67,12 +67,43 @@ func NewClient(host string, client *http.Client) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) Prices(ctx context.Context, symbol string) ([]PriceResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s/%s", c.hostUrl.String(), "price", symbol), nil)
+func (c *Client) SymbolPrices(ctx context.Context, symbol string) ([]PriceResponse, error) {
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("%s/%s/%s", c.hostUrl.String(), "price", symbol),
+		nil,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "crate price request")
 	}
-	req.WithContext(ctx)
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "send price request")
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("wrong status code: %d", resp.StatusCode)
+	}
+	var prices []PriceResponse
+	if err := json.NewDecoder(resp.Body).Decode(&prices); err != nil {
+		return nil, errors.Wrap(err, "parse price response body")
+	}
+	return prices, nil
+}
+func (c *Client) ExchangePrices(ctx context.Context, exchange string) ([]PriceResponse, error) {
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("%s/price/exchange/%s", c.hostUrl.String(), exchange),
+		nil,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "crate price request")
+	}
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "send price request")
@@ -92,11 +123,10 @@ func (c *Client) Prices(ctx context.Context, symbol string) ([]PriceResponse, er
 }
 
 func (c *Client) AllSymbolPrices(ctx context.Context) ([]PriceResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", c.hostUrl.String(), "prices"), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/%s", c.hostUrl.String(), "prices"), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "crate price request to loader")
 	}
-	req.WithContext(ctx)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "send price request to loader")
@@ -113,14 +143,14 @@ func (c *Client) AllSymbolPrices(ctx context.Context) ([]PriceResponse, error) {
 }
 
 func (c *Client) SymbolSnapshot(ctx context.Context, exchange, symbol string) (SymbolSnapshotResponse, error) {
-	req, err := http.NewRequest(
+	req, err := http.NewRequestWithContext(
+		ctx,
 		http.MethodGet,
 		fmt.Sprintf("%s/snapshot/%s/%s", c.hostUrl.String(), exchange, symbol),
 		nil)
 	if err != nil {
 		return SymbolSnapshotResponse{}, errors.Wrap(err, "crate price request to symbol snapshot")
 	}
-	req.WithContext(ctx)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return SymbolSnapshotResponse{}, errors.Wrap(err, "send request to symbol snapshot")
@@ -137,14 +167,14 @@ func (c *Client) SymbolSnapshot(ctx context.Context, exchange, symbol string) (S
 }
 
 func (c *Client) Candlesticks(ctx context.Context, exchange, symbol, interval string) ([]SymbolSnapshotCandlestick, error) {
-	req, err := http.NewRequest(
+	req, err := http.NewRequestWithContext(
+		ctx,
 		http.MethodGet,
 		fmt.Sprintf("%s/candlesticks/%s/%s/%s", c.hostUrl.String(), interval, exchange, symbol),
 		nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "crate price request to symbol snapshot")
 	}
-	req.WithContext(ctx)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "send request to symbol snapshot")

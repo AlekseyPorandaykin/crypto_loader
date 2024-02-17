@@ -19,13 +19,14 @@ type Price struct {
 	prices   []domain.SymbolPrice
 	muPrices sync.Mutex
 
-	lastPrices map[string]domain.SymbolPrice
+	lastPrices  map[string]map[string]domain.SymbolPrice
+	muLastPrice sync.Mutex
 }
 
 func NewPriceStorage(repo domain.PriceStorage) *Price {
 	return &Price{
 		repo:       repo,
-		lastPrices: make(map[string]domain.SymbolPrice),
+		lastPrices: make(map[string]map[string]domain.SymbolPrice),
 	}
 }
 
@@ -62,11 +63,15 @@ func (p *Price) AddPrices(prices []domain.SymbolPrice) {
 	prices = p.mutatePrice(prices)
 	p.muPrices.Lock()
 	p.prices = append(p.prices, prices...)
-	defer p.muPrices.Unlock()
+	p.muPrices.Unlock()
 
+	p.muLastPrice.Lock()
+	defer p.muLastPrice.Unlock()
 	for _, price := range prices {
-		key := fmt.Sprintf("%s-%s", price.Exchange, price.Symbol)
-		p.lastPrices[key] = price
+		if _, has := p.lastPrices[price.Exchange]; !has {
+			p.lastPrices[price.Exchange] = make(map[string]domain.SymbolPrice)
+		}
+		p.lastPrices[price.Exchange][price.Symbol] = price
 	}
 }
 func (p *Price) SavePrices(ctx context.Context, prices []domain.SymbolPrice) error {
@@ -80,8 +85,10 @@ func (p *Price) SavePrices(ctx context.Context, prices []domain.SymbolPrice) err
 func (p *Price) LastPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	var symbolPrices []domain.SymbolPrice
 	p.muPrices.Lock()
-	for _, lp := range p.lastPrices {
-		symbolPrices = append(symbolPrices, lp)
+	for _, exchangePrices := range p.lastPrices {
+		for _, lp := range exchangePrices {
+			symbolPrices = append(symbolPrices, lp)
+		}
 	}
 	p.muPrices.Unlock()
 	if len(symbolPrices) > 0 {
@@ -111,9 +118,11 @@ func (p *Price) LastPrice(ctx context.Context, exchange, symbol string) (domain.
 func (p *Price) SymbolPrice(ctx context.Context, symbol string) ([]domain.SymbolPrice, error) {
 	var symbolPrices []domain.SymbolPrice
 	p.muPrices.Lock()
-	for _, lp := range p.lastPrices {
-		if lp.Symbol == symbol {
-			symbolPrices = append(symbolPrices, lp)
+	for _, exchangePrices := range p.lastPrices {
+		for _, price := range exchangePrices {
+			if price.Symbol == symbol {
+				symbolPrices = append(symbolPrices, price)
+			}
 		}
 	}
 	p.muPrices.Unlock()
@@ -123,6 +132,23 @@ func (p *Price) SymbolPrice(ctx context.Context, symbol string) ([]domain.Symbol
 	symbolPrices, err := p.repo.SymbolPrice(ctx, symbol)
 	if err != nil {
 		return nil, errors.Wrap(err, "get symbol prices")
+	}
+	return symbolPrices, nil
+}
+
+func (p *Price) ExchangePrice(ctx context.Context, exchange string) ([]domain.SymbolPrice, error) {
+	var symbolPrices []domain.SymbolPrice
+	p.muPrices.Lock()
+	for _, price := range p.lastPrices[exchange] {
+		symbolPrices = append(symbolPrices, price)
+	}
+	p.muPrices.Unlock()
+	if len(symbolPrices) > 0 {
+		return symbolPrices, nil
+	}
+	symbolPrices, err := p.repo.ExchangePrice(ctx, exchange)
+	if err != nil {
+		return nil, errors.Wrap(err, "get exchange prices")
 	}
 	return symbolPrices, nil
 }

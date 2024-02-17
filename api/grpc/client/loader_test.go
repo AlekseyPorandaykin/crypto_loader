@@ -22,7 +22,7 @@ func TestLoader_Start(t *testing.T) {
 		case <-ctx.Done():
 			return
 		case batch := <-l.Batch():
-			fmt.Printf("Prices: %d \n", len(batch.Prices()))
+			fmt.Printf("SymbolPrices: %d \n", len(batch.Prices()))
 		}
 	}
 }

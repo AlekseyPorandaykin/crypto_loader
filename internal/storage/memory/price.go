@@ -46,3 +46,16 @@ func (repo *PriceRepository) SymbolPrice(ctx context.Context, symbol string) ([]
 	}
 	return res, nil
 }
+
+func (repo *PriceRepository) ExchangePrice(ctx context.Context, exchange string) ([]domain.SymbolPrice, error) {
+	var res []domain.SymbolPrice
+	repo.mu.Lock()
+	prices := repo.prices
+	repo.mu.Unlock()
+	for _, price := range prices {
+		if price.Exchange == exchange {
+			res = append(res, price)
+		}
+	}
+	return res, nil
+}
