@@ -12,12 +12,12 @@ import (
 	http_server "github.com/AlekseyPorandaykin/crypto_loader/internal/component/server/http"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/config"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/memory"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/repositories"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance"
 	binance_sender "github.com/AlekseyPorandaykin/crypto_loader/pkg/binance/sender"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bitget"
-	bybit_sender "github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/sender"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5"
+	bybit_sender "github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/sender"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/gateio"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kraken"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kucoin"
@@ -85,17 +85,17 @@ var rootCmd = &cobra.Command{
 		}
 
 		//DB
-		//db, err := repositories2.CreateDB(conf.ConfDB)
-		//if err != nil {
-		//	fmt.Println("Error init database: ", err.Error())
-		//	return
-		//}
-		//defer func() { _ = db.Close() }()
+		db, err := repositories.CreateDB(conf.ConfDB)
+		if err != nil {
+			fmt.Println("Error init database: ", err.Error())
+			return
+		}
+		defer func() { _ = db.Close() }()
 
 		//Repository
-		priceRepo := memory.NewPriceRepository()
+		priceRepo := repositories.NewPriceRepository(db)
 		//Storage
-		priceStorage := storage.NewPriceStorage(priceRepo)
+		priceStorage := storage.NewPriceStorage(priceRepo, priceRepo)
 		symbolStorage := storage.NewSymbol()
 		candleStorage := storage.NewCandlestick()
 

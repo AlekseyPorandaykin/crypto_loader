@@ -11,11 +11,11 @@ import (
 func (c *Client) PositionInfo(ctx context.Context, apiKey, apiSecret string, category domain.OrderCategory) (any, error) {
 	req, err := c.positionReq.GetPositionInfo(ctx, apiKey, apiSecret, category)
 	if err != nil {
-		return nil, errors.Wrap(err, "error create request")
+		return nil, WrapErrCreateRequest(err)
 	}
 	res, err := c.sender.Send(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "http client do")
+		return nil, WrapErrHttpClientDo(err)
 	}
 	if res.Body == nil {
 		return nil, errors.New("empty body response")
@@ -28,11 +28,11 @@ func (c *Client) PositionInfo(ctx context.Context, apiKey, apiSecret string, cat
 func (c *Client) PositionMoveHistory(ctx context.Context, cred request.CredentialParam, param request.MovePositionHistoryParam) ([]byte, error) {
 	req, err := c.positionReq.GetMovePositionHistory(ctx, cred, param)
 	if err != nil {
-		return nil, errors.Wrap(err, "error create request")
+		return nil, WrapErrCreateRequest(err)
 	}
 	res, err := c.sender.Send(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "http client do")
+		return nil, WrapErrHttpClientDo(err)
 	}
 	if res.Body == nil {
 		return nil, errors.New("empty body response")

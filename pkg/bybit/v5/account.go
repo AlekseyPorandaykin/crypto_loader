@@ -12,11 +12,11 @@ import (
 func (c *Client) AccountWalletBalance(ctx context.Context, apiKey, apiSecret string, account domain.AccountType) (any, error) {
 	req, err := c.accountRequest.GetWalletBalance(ctx, apiKey, apiSecret, account)
 	if err != nil {
-		return nil, WrapCreateRequestErr(err)
+		return nil, WrapErrCreateRequest(err)
 	}
 	res, err := c.sender.Send(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "http client do")
+		return nil, WrapErrHttpClientDo(err)
 	}
 	if res.Body == nil {
 		return nil, errors.New("empty body response")
@@ -32,7 +32,7 @@ func (c *Client) AccountTransactionLog(
 ) (response.TransactionLogsResponse, error) {
 	req, err := c.accountRequest.GetTransactionLog(ctx, cred, param)
 	if err != nil {
-		return response.TransactionLogsResponse{}, WrapCreateRequestErr(err)
+		return response.TransactionLogsResponse{}, WrapErrCreateRequest(err)
 	}
 	res := response.TransactionLogsResponse{}
 	if err := c.sendRequest(req, &res); err != nil {

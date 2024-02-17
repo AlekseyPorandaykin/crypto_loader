@@ -68,13 +68,8 @@ func (p *Price) loadPrices(ctx context.Context, name string, client Client) {
 	p.priceStorage.AddPrices(prices)
 
 	symbols := make([]string, 0, len(prices))
-	uniqSymbols := make(map[string]bool, len(prices))
 	for _, price := range prices {
-		if uniqSymbols[price.Symbol] {
-			continue
-		}
 		symbols = append(symbols, price.Symbol)
-		uniqSymbols[price.Symbol] = true
 	}
 	if err := p.symbolStorage.SaveSymbols(ctx, name, symbols); err != nil {
 		zap.L().Error("error load symbols", zap.Error(err))

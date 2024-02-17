@@ -115,7 +115,7 @@ func (c *Client) TradeHistory(
 ) (response.TradeHistoryResponse, error) {
 	req, err := c.traderRequest.GetTradeHistory(ctx, cred, param)
 	if err != nil {
-		return response.TradeHistoryResponse{}, WrapCreateRequestErr(err)
+		return response.TradeHistoryResponse{}, WrapErrCreateRequest(err)
 	}
 	resp, err := c.sender.Send(req)
 	if err != nil {

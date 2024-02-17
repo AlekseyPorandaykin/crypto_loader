@@ -13,22 +13,45 @@ import (
 
 var _ domain.PriceStorage = (*Price)(nil)
 
-type Price struct {
-	repo domain.PriceStorage
-
-	muPrices   sync.Mutex
-	prices     []domain.SymbolPrice
-	lastPrices map[string]domain.SymbolPrice
+type FirstPriceLoader interface {
+	FirstSymbolPrices(ctx context.Context) ([]domain.SymbolPrice, error)
 }
 
-func NewPriceStorage(repo domain.PriceStorage) *Price {
+type Price struct {
+	repo             domain.PriceStorage
+	firstPriceLoader FirstPriceLoader
+
+	prices   []domain.SymbolPrice
+	muPrices sync.Mutex
+
+	lastPrices map[string]domain.SymbolPrice
+
+	firstPrices   map[string]map[string]domain.SymbolPrice
+	muFirstPrices sync.Mutex
+
+	newPricesCh chan domain.SymbolPrice
+}
+
+func NewPriceStorage(repo domain.PriceStorage, firstPriceRepo FirstPriceLoader) *Price {
 	return &Price{
-		repo:       repo,
-		lastPrices: make(map[string]domain.SymbolPrice),
+		repo:             repo,
+		firstPriceLoader: firstPriceRepo,
+		lastPrices:       make(map[string]domain.SymbolPrice),
+		firstPrices:      make(map[string]map[string]domain.SymbolPrice),
+		newPricesCh:      make(chan domain.SymbolPrice),
 	}
 }
 
+func (p *Price) NewPrices() <-chan domain.SymbolPrice {
+	return p.newPricesCh
+}
+
 func (p *Price) Run(ctx context.Context) {
+	go p.runUpdatePrices(ctx)
+	go p.runLoadFirstPrices(ctx)
+}
+
+func (p *Price) runUpdatePrices(ctx context.Context) {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 	for {
@@ -38,6 +61,35 @@ func (p *Price) Run(ctx context.Context) {
 		case <-ticker.C:
 			p.UpdatePrices(ctx)
 		}
+	}
+}
+
+func (p *Price) runLoadFirstPrices(ctx context.Context) {
+	p.loadFirstPrices(ctx)
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			p.loadFirstPrices(ctx)
+		}
+	}
+}
+
+func (p *Price) loadFirstPrices(ctx context.Context) {
+	prices, err := p.firstPriceLoader.FirstSymbolPrices(ctx)
+	if err != nil {
+		return
+	}
+	p.muFirstPrices.Lock()
+	defer p.muFirstPrices.Unlock()
+	for _, price := range prices {
+		if _, has := p.firstPrices[price.Exchange]; !has {
+			p.firstPrices[price.Exchange] = make(map[string]domain.SymbolPrice)
+		}
+		p.firstPrices[price.Exchange][price.Symbol] = price
 	}
 }
 
@@ -63,6 +115,7 @@ func (p *Price) AddPrices(prices []domain.SymbolPrice) {
 		key := fmt.Sprintf("%s-%s", price.Exchange, price.Symbol)
 		p.lastPrices[key] = price
 	}
+	_ = p.SaveFirstSymbolPrices(context.TODO(), prices)
 }
 func (p *Price) SavePrices(ctx context.Context, prices []domain.SymbolPrice) error {
 	p.AddPrices(prices)
@@ -120,6 +173,52 @@ func (p *Price) SymbolPrice(ctx context.Context, symbol string) ([]domain.Symbol
 		return nil, errors.Wrap(err, "get symbol prices")
 	}
 	return symbolPrices, nil
+}
+
+func (p *Price) SaveFirstSymbolPrices(ctx context.Context, prices []domain.SymbolPrice) error {
+	p.muFirstPrices.Lock()
+	defer p.muFirstPrices.Unlock()
+	for _, price := range prices {
+		if _, has := p.firstPrices[price.Exchange]; !has {
+			p.firstPrices[price.Exchange] = make(map[string]domain.SymbolPrice)
+		}
+		if _, has := p.firstPrices[price.Exchange][price.Symbol]; has {
+			continue
+		}
+		p.firstPrices[price.Exchange][price.Symbol] = price
+		select {
+		case p.newPricesCh <- price:
+		default:
+			continue
+		}
+	}
+
+	return p.repo.SaveFirstSymbolPrices(ctx, prices)
+}
+
+func (p *Price) FirstSymbolPrice(ctx context.Context, exchange, symbol string) (domain.SymbolPrice, error) {
+	p.muFirstPrices.Lock()
+	defer p.muFirstPrices.Unlock()
+	if _, has := p.firstPrices[exchange]; !has {
+		return domain.SymbolPrice{}, nil
+	}
+	if price, has := p.firstPrices[exchange][symbol]; has {
+		return price, nil
+	}
+
+	return p.repo.FirstSymbolPrice(ctx, exchange, symbol)
+}
+func (p *Price) FirstSymbolPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
+	return p.firstPriceLoader.FirstSymbolPrices(ctx)
+}
+
+func (p *Price) HasFirstSymbolPrice(ctx context.Context, exchange, symbol string) bool {
+	p.muFirstPrices.Lock()
+	defer p.muFirstPrices.Unlock()
+	if _, has := p.firstPrices[symbol]; has {
+		return true
+	}
+	return false
 }
 
 func (p *Price) filterLastPrices(prices []domain.SymbolPrice) []domain.SymbolPrice {

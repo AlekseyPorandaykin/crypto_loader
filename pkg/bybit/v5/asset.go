@@ -34,7 +34,7 @@ func (c *Client) assetInfo(ctx context.Context, apiKey, apiSecret string, accoun
 	var result response.AssetResponse
 	req, err := c.assetRequest.GetAssetInfo(ctx, apiKey, apiSecret, accountType)
 	if err != nil {
-		return nil, WrapCreateRequestErr(err)
+		return nil, WrapErrCreateRequest(err)
 	}
 	if err := c.sendRequest(req, &result); err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (c *Client) assetCoinsBalance(
 	var result response.CoinBalanceResponse
 	req, err := c.assetRequest.GetAllCoinsBalance(ctx, apiKey, apiSecret, accountType)
 	if err != nil {
-		return response.CoinBalanceResponse{}, WrapCreateRequestErr(err)
+		return response.CoinBalanceResponse{}, WrapErrCreateRequest(err)
 	}
 	if err := c.sendRequest(req, &result); err != nil {
 		return response.CoinBalanceResponse{}, nil
@@ -88,11 +88,11 @@ func (c *Client) assetCoinsBalance(
 func (c *Client) AssetCoinExchangeRecords(ctx context.Context, apiKey, apiSecret string) (any, error) {
 	req, err := c.assetRequest.GetCoinExchangeRecords(ctx, apiKey, apiSecret)
 	if err != nil {
-		return nil, errors.Wrap(err, "error create request")
+		return nil, WrapErrCreateRequest(err)
 	}
 	res, err := c.sender.Send(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "http client do")
+		return nil, WrapErrHttpClientDo(err)
 	}
 	if res.Body == nil {
 		return nil, errors.New("empty body response")
@@ -107,7 +107,7 @@ func (c *Client) AssetInternalTransferRecords(
 ) (response.InternalTransferRecordsResponse, error) {
 	req, err := c.assetRequest.GetInternalTransferRecords(ctx, apiKey, apiSecret)
 	if err != nil {
-		return response.InternalTransferRecordsResponse{}, WrapCreateRequestErr(err)
+		return response.InternalTransferRecordsResponse{}, WrapErrCreateRequest(err)
 	}
 	result := response.InternalTransferRecordsResponse{}
 	if err := c.sendRequest(req, &result); err != nil {
@@ -121,7 +121,7 @@ func (c *Client) AssetWithdrawalRecords(
 ) (response.WithdrawalRecordsResponse, error) {
 	req, err := c.assetRequest.GetWithdrawalRecords(ctx, cred, param)
 	if err != nil {
-		return response.WithdrawalRecordsResponse{}, errors.Wrap(err, "error create request")
+		return response.WithdrawalRecordsResponse{}, WrapErrCreateRequest(err)
 	}
 	result := response.WithdrawalRecordsResponse{}
 	if err := c.sendRequest(req, &result); err != nil {
@@ -133,7 +133,7 @@ func (c *Client) AssetWithdrawalRecords(
 func (c *Client) AssetDepositRecords(ctx context.Context, cred request.CredentialParam, param request.GetDepositRecordParam) (CommonResponse, error) {
 	req, err := c.assetRequest.GetDepositRecords(ctx, cred, param)
 	if err != nil {
-		return CommonResponse{}, WrapCreateRequestErr(err)
+		return CommonResponse{}, WrapErrCreateRequest(err)
 	}
 	result := CommonResponse{}
 	if err := c.sendRequest(req, &result); err != nil {
@@ -145,7 +145,7 @@ func (c *Client) AssetDepositRecords(ctx context.Context, cred request.Credentia
 func (c *Client) AssetUniversalTransferRecords(ctx context.Context, apiKey, apiSecret string) (any, error) {
 	req, err := c.assetRequest.GetUniversalTransferRecords(ctx, apiKey, apiSecret)
 	if err != nil {
-		return nil, errors.Wrap(err, "error create request")
+		return nil, WrapErrCreateRequest(err)
 	}
 	result := make(map[string]interface{})
 	if err := c.sendRequest(req, &result); err != nil {

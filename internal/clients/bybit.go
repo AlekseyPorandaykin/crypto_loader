@@ -24,7 +24,7 @@ func (c *ByBit) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
 	var tickerResp v5.TickerResponse
 	err := backoff.Retry(func() error {
 		var err error
-		tickerResp, err = c.client.SpotTicker(ctx)
+		tickerResp, err = c.client.MarketSpotTicker(ctx)
 		if err != nil {
 			return err
 		}

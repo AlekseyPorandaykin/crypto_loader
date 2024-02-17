@@ -33,6 +33,9 @@ func (repo *PriceRepository) LastPrices(ctx context.Context) ([]domain.SymbolPri
 	defer repo.mu.Unlock()
 	return repo.prices, nil
 }
+func (repo *PriceRepository) SaveFirstSymbolPrices(ctx context.Context, prices []domain.SymbolPrice) error {
+	return nil
+}
 
 func (repo *PriceRepository) SymbolPrice(ctx context.Context, symbol string) ([]domain.SymbolPrice, error) {
 	var res []domain.SymbolPrice
