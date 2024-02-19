@@ -5,6 +5,7 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/metric"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/shutdown"
 	"go.uber.org/zap"
 	"time"
 )
@@ -44,6 +45,7 @@ func (c *Candlestick) load(ctx context.Context, exchange string) {
 		return
 	}
 	go func() {
+		defer shutdown.HandlePanic()
 		c.loadFutureCandlestickOneHour(ctx, exchange, loader)
 		ticker := time.NewTicker(100 * time.Second)
 		defer ticker.Stop()
@@ -60,6 +62,7 @@ func (c *Candlestick) load(ctx context.Context, exchange string) {
 	}()
 
 	go func() {
+		defer shutdown.HandlePanic()
 		c.loadFutureCandlestickFourHour(ctx, exchange, loader)
 		ticker := time.NewTicker(100 * time.Second)
 		defer ticker.Stop()

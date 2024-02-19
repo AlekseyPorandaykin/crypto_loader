@@ -1,6 +1,7 @@
 package sender
 
 import (
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/shutdown"
 	"time"
 )
 
@@ -30,6 +31,7 @@ func (l *Locker) SyncDelay(d time.Duration) {
 func (l *Locker) AsyncDelay(d time.Duration) {
 	l.Lock()
 	go func() {
+		defer shutdown.HandlePanic()
 		select {
 		case <-time.After(d):
 			l.Unlock()

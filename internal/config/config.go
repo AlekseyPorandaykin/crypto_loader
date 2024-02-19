@@ -45,13 +45,13 @@ func Create() AppConfig {
 		MexcHost:   "https://api.mexc.com/",
 		ConfDB: repositories.Config{
 			Driver:   "postgres",
-			Username: "crypto_loader",
+			Username: "crypto_app",
 			Password: "developer",
 			Host:     "localhost",
 			Port:     "5433",
-			Database: "crypto_loader",
+			Database: "crypto_app",
 		},
-		HttpAddr:   ":8081",
+		HttpAddr:   "8081",
 		MetricAddr: ":9081",
 		GrpcAddr:   ":50052",
 	}

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/clients"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/candlestick"
+	http_server "github.com/AlekseyPorandaykin/crypto_loader/internal/component/controller"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/loaders"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/order"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/server/grpc"
-	http_server "github.com/AlekseyPorandaykin/crypto_loader/internal/component/server/http"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/config"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/repositories"
@@ -24,10 +24,10 @@ import (
 	kukoin_sender "github.com/AlekseyPorandaykin/crypto_loader/pkg/kucoin/sender"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/mexc"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/okx"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/server/http"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/shutdown"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"net/http"
 	"os/signal"
 	"syscall"
 )
@@ -123,33 +123,38 @@ var rootCmd = &cobra.Command{
 		agg := candlestick.NewCandlestick(candleStorage, priceStorage, symbolStorage)
 
 		//Servers
-		servHTTP := http_server.NewServer(conf.HttpAddr, priceStorage, order, agg)
-		defer servHTTP.Close()
+		s := http.NewServer()
+		controllerService := http_server.NewController(conf.HttpAddr, priceStorage, order, agg)
+		s.RegistrationPage(controllerService)
 
 		servGrpc := grpc.NewServer(priceStorage, conf.GrpcAddr)
 		defer servGrpc.Close()
 
 		//Runs
-		go priceStorage.Run(ctx)
-		go priceLoader.Run(ctx, conf.DurationPriceRequest)
-		go candleLoader.Run(ctx)
 		go func() {
+			defer shutdown.HandlePanic()
+			priceStorage.Run(ctx)
+		}()
+		go func() {
+			defer shutdown.HandlePanic()
+			priceLoader.Run(ctx, conf.DurationPriceRequest)
+		}()
+		go func() {
+			defer shutdown.HandlePanic()
+			candleLoader.Run(ctx)
+		}()
+		go func() {
+			defer shutdown.HandlePanic()
 			defer cancel()
-			if err := servHTTP.Run(); err != nil && !errors.Is(err, context.Canceled) {
+			if err := s.Run("localhost", conf.HttpAddr); err != nil && !errors.Is(err, context.Canceled) {
 				zap.L().Error("failed start serve", zap.Error(err))
 			}
 		}()
 		go func() {
+			defer shutdown.HandlePanic()
 			defer cancel()
 			if err := servGrpc.Start(); err != nil && !errors.Is(err, context.Canceled) {
 				zap.L().Error("failed start server", zap.Error(err))
-			}
-		}()
-		go func() {
-			defer cancel()
-			http.Handle("/metrics", promhttp.Handler())
-			if err := http.ListenAndServe(conf.MetricAddr, nil); err != nil {
-				zap.L().Error("failed start metrics", zap.Error(err))
 			}
 		}()
 		<-ctx.Done()

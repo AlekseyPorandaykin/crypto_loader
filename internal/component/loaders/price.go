@@ -5,6 +5,7 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/metric"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/shutdown"
 	"go.uber.org/zap"
 	"sync"
 	"time"
@@ -40,6 +41,7 @@ func (p *Price) AddClient(name string, client Client) {
 func (p *Price) Run(ctx context.Context, d time.Duration) {
 	for name, client := range p.clients {
 		go func(name string, client Client) {
+			defer shutdown.HandlePanic()
 			p.loadPrices(ctx, name, client)
 			ticker := time.NewTicker(d)
 			defer ticker.Stop()
