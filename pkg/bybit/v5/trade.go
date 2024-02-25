@@ -42,6 +42,7 @@ func (c *Client) tradeOpenOrders(ctx context.Context, apiKey, apiSecret string, 
 	}
 	return result, err
 }
+
 func (c *Client) TradeSpotOrderHistory(
 	ctx context.Context, cred request.CredentialParam,
 ) (response.TradeOrderHistoryResponse, error) {
@@ -59,6 +60,7 @@ func (c *Client) TradeInverseOrderHistory(
 ) (response.TradeOrderHistoryResponse, error) {
 	return c.TradeOrderHistory(ctx, cred, request.TradeOrderHistoryParam{Category: domain.InverseOrderCategory})
 }
+
 func (c *Client) TradeOptionOrderHistory(
 	ctx context.Context, cred request.CredentialParam,
 ) (response.TradeOrderHistoryResponse, error) {

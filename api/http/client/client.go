@@ -71,7 +71,7 @@ func (c *Client) SymbolPrices(ctx context.Context, symbol string) ([]PriceRespon
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("%s/%s/%s", c.hostUrl.String(), "price", symbol),
+		fmt.Sprintf("%s/api/price/%s", c.hostUrl.String(), symbol),
 		nil,
 	)
 	if err != nil {
@@ -94,11 +94,12 @@ func (c *Client) SymbolPrices(ctx context.Context, symbol string) ([]PriceRespon
 	}
 	return prices, nil
 }
+
 func (c *Client) ExchangePrices(ctx context.Context, exchange string) ([]PriceResponse, error) {
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("%s/price/exchange/%s", c.hostUrl.String(), exchange),
+		fmt.Sprintf("%s/api/price/exchange/%s", c.hostUrl.String(), exchange),
 		nil,
 	)
 	if err != nil {
@@ -123,7 +124,7 @@ func (c *Client) ExchangePrices(ctx context.Context, exchange string) ([]PriceRe
 }
 
 func (c *Client) AllSymbolPrices(ctx context.Context) ([]PriceResponse, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/%s", c.hostUrl.String(), "prices"), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/prices", c.hostUrl.String()), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "crate price request to loader")
 	}
@@ -146,7 +147,7 @@ func (c *Client) SymbolSnapshot(ctx context.Context, exchange, symbol string) (S
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("%s/snapshot/%s/%s", c.hostUrl.String(), exchange, symbol),
+		fmt.Sprintf("%s/api/snapshot/%s/%s", c.hostUrl.String(), exchange, symbol),
 		nil)
 	if err != nil {
 		return SymbolSnapshotResponse{}, errors.Wrap(err, "crate price request to symbol snapshot")
@@ -170,7 +171,7 @@ func (c *Client) Candlesticks(ctx context.Context, exchange, symbol, interval st
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("%s/candlesticks/%s/%s/%s", c.hostUrl.String(), interval, exchange, symbol),
+		fmt.Sprintf("%s/api/candlesticks/%s/%s/%s", c.hostUrl.String(), interval, exchange, symbol),
 		nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "crate price request to symbol snapshot")
