@@ -184,6 +184,7 @@ func (c *Client) Candlesticks(ctx context.Context, exchange, symbol, interval st
 		return nil, errors.Wrap(err, "send request to symbol snapshot")
 	}
 	defer func() { _ = resp.Body.Close() }()
+
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil
 	}
@@ -194,5 +195,6 @@ func (c *Client) Candlesticks(ctx context.Context, exchange, symbol, interval st
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return nil, errors.Wrap(err, "parse response body from symbol snapshot")
 	}
+
 	return res, nil
 }
