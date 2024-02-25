@@ -36,9 +36,12 @@ type SymbolSnapshotCandlestick struct {
 
 type SymbolSnapshotResponse struct {
 	Symbol        string                    `json:"symbol"`
+	BaseAsset     string                    `json:"base_asset"`
+	QuoteAsset    string                    `json:"quote_asset"`
 	Exchange      string                    `json:"exchange"`
 	CreatedAt     time.Time                 `json:"created_at"`
 	Price         string                    `json:"price"`
+	PriceUpdated  time.Time                 `json:"price_updated"`
 	Candlestick4H SymbolSnapshotCandlestick `json:"candlestick_4h"`
 	Candlestick1H SymbolSnapshotCandlestick `json:"candlestick_1h"`
 }
