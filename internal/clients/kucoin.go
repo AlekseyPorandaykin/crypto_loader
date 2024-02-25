@@ -23,7 +23,7 @@ func NewKucoin(client *kucoin.Client) *Kucoin {
 	}
 }
 
-func (c *Kucoin) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
+func (c *Kucoin) LoadPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	result := make([]domain.SymbolPrice, 0, 1500)
 	var allTickersResp response.AllTickersResponse
 	err := backoff.Retry(func() error {

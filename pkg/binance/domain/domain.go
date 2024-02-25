@@ -83,3 +83,41 @@ const (
 	OneHourCandlestickInterval  CandlestickInterval = "1h"
 	FourHourCandlestickInterval CandlestickInterval = "4h"
 )
+
+type RateLimit struct {
+	RateLimitType string `json:"rateLimitType"`
+	Interval      string `json:"interval"`
+	IntervalNum   int    `json:"intervalNum"`
+	Limit         int    `json:"limit"`
+}
+
+type ExchangeInfoDTO struct {
+	Timezone   string              `json:"timezone"`
+	ServerTime int                 `json:"serverTime"`
+	RateLimits []RateLimit         `json:"rateLimits"`
+	Symbols    []SymbolExchangeDTO `json:"symbols"`
+}
+
+type SymbolExchangeDTO struct {
+	Symbol                          string      `json:"symbol"`
+	Status                          string      `json:"status"`
+	BaseAsset                       string      `json:"baseAsset"`
+	BaseAssetPrecision              int         `json:"baseAssetPrecision"`
+	QuoteAsset                      string      `json:"quoteAsset"`
+	QuotePrecision                  int         `json:"quotePrecision"`
+	QuoteAssetPrecision             int         `json:"quoteAssetPrecision"`
+	BaseCommissionPrecision         int         `json:"baseCommissionPrecision"`
+	QuoteCommissionPrecision        int         `json:"quoteCommissionPrecision"`
+	OrderTypes                      []string    `json:"orderTypes"`
+	IcebergAllowed                  bool        `json:"icebergAllowed"`
+	OcoAllowed                      bool        `json:"ocoAllowed"`
+	QuoteOrderQtyMarketAllowed      bool        `json:"quoteOrderQtyMarketAllowed"`
+	AllowTrailingStop               bool        `json:"allowTrailingStop"`
+	CancelReplaceAllowed            bool        `json:"cancelReplaceAllowed"`
+	IsSpotTradingAllowed            bool        `json:"isSpotTradingAllowed"`
+	IsMarginTradingAllowed          bool        `json:"isMarginTradingAllowed"`
+	Filters                         interface{} `json:"filters"`
+	Permissions                     []string    `json:"permissions"`
+	DefaultSelfTradePreventionMode  string      `json:"defaultSelfTradePreventionMode"`
+	AllowedSelfTradePreventionModes []string    `json:"allowedSelfTradePreventionModes"`
+}

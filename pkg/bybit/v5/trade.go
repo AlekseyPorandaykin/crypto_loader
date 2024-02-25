@@ -6,6 +6,7 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/request"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/response"
+	"io"
 )
 
 func (c *Client) TradeSpotOpenOrders(ctx context.Context, apiKey, apiSecret string) (response.TradeOpenOrdersResponse, error) {
@@ -128,4 +129,21 @@ func (c *Client) TradeHistory(
 		return response.TradeHistoryResponse{}, err
 	}
 	return result, err
+}
+
+func (c *Client) TradePlaceOrder(
+	ctx context.Context, cred request.CredentialParam, param request.PlaceOrderParam,
+) (any, error) {
+	req, err := c.traderRequest.PlaceOrder(ctx, cred, param)
+	if err != nil {
+		return response.TradeHistoryResponse{}, WrapErrCreateRequest(err)
+	}
+	resp, err := c.sender.Send(req)
+	if err != nil {
+		return response.TradeHistoryResponse{}, err
+	}
+
+	defer func() { _ = resp.Body.Close() }()
+	data, err := io.ReadAll(resp.Body)
+	return data, err
 }

@@ -21,7 +21,7 @@ func NewOkx(client *okx.Client) *Okx {
 	return &Okx{client: client}
 }
 
-func (c *Okx) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
+func (c *Okx) LoadPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	result := make([]domain.SymbolPrice, 0, 500)
 	var tickerResp response.TickersResponse
 	err := backoff.Retry(func() error {

@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/database"
 	"github.com/jmoiron/sqlx"
 	"strings"
+	"time"
 )
 
 const DatetimeFormat = "2006-01-02 15:04:05"
@@ -13,7 +15,7 @@ const DatetimeFormat = "2006-01-02 15:04:05"
 var _ domain.PriceStorage = (*PriceRepository)(nil)
 
 type PriceRepository struct {
-	db *sqlx.DB
+	db database.Database
 }
 
 func NewPriceRepository(db *sqlx.DB) *PriceRepository {
@@ -30,6 +32,9 @@ func (repo *PriceRepository) SavePrices(ctx context.Context, prices []domain.Sym
 	if len(prices) == 0 {
 		return nil
 	}
+	defer func(start time.Time) {
+		database.WithExecuteMetric("savePrice", start)
+	}(time.Now())
 	for _, price := range prices {
 		values = append(
 			values,
@@ -50,6 +55,9 @@ func (repo *PriceRepository) SavePrices(ctx context.Context, prices []domain.Sym
 }
 
 func (repo *PriceRepository) LastPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
+	defer func(start time.Time) {
+		database.WithExecuteMetric("lastPrice", start)
+	}(time.Now())
 	var (
 		prices = make([]domain.SymbolPrice, 0, 300_000)
 		query  = `SELECT * FROM crypto_loader.prices ORDER BY datetime`
@@ -61,6 +69,9 @@ func (repo *PriceRepository) LastPrices(ctx context.Context) ([]domain.SymbolPri
 }
 
 func (repo *PriceRepository) SymbolPrice(ctx context.Context, symbol string) ([]domain.SymbolPrice, error) {
+	defer func(start time.Time) {
+		database.WithExecuteMetric("symbolPrice", start)
+	}(time.Now())
 	var (
 		prices = make([]domain.SymbolPrice, 0, 300_000)
 		query  = `SELECT price, symbol, exchange, datetime, updated_at FROM crypto_loader.prices WHERE symbol=$1 ORDER BY datetime`
@@ -72,6 +83,9 @@ func (repo *PriceRepository) SymbolPrice(ctx context.Context, symbol string) ([]
 }
 
 func (repo *PriceRepository) ExchangePrice(ctx context.Context, exchange string) ([]domain.SymbolPrice, error) {
+	defer func(start time.Time) {
+		database.WithExecuteMetric("exchangePrice", start)
+	}(time.Now())
 	var (
 		prices = make([]domain.SymbolPrice, 0, 300_000)
 		query  = `SELECT price, symbol, exchange, datetime, updated_at FROM crypto_loader.prices WHERE exchange=$1 ORDER BY datetime`

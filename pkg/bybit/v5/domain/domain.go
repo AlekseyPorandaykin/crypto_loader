@@ -41,3 +41,17 @@ const (
 	BlockTradeExecType   ExecType = "BlockTrade"
 	MovePositionExecType ExecType = "MovePosition"
 )
+
+type Side string
+
+const (
+	BuySide  Side = "Buy"
+	SellSide Side = "Sell"
+)
+
+type OrderType string
+
+const (
+	MarketOrderType OrderType = "Market"
+	LimitOrderType  OrderType = "Limit"
+)

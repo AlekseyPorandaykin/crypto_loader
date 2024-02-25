@@ -20,7 +20,7 @@ func NewKraken(client *kraken.Client) *Kraken {
 	return &Kraken{client: client}
 }
 
-func (c *Kraken) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
+func (c *Kraken) LoadPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	result := make([]domain.SymbolPrice, 0, 2500)
 	var response kraken.TickerResponse
 	err := backoff.Retry(func() error {

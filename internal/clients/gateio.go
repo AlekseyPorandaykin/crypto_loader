@@ -19,7 +19,7 @@ func NewGateIo(client *gateio.Client) *GateIo {
 	return &GateIo{client: client}
 }
 
-func (c *GateIo) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
+func (c *GateIo) LoadPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	result := make([]domain.SymbolPrice, 0, 5000)
 	var prices []gateio.Tick
 	err := backoff.Retry(func() error {

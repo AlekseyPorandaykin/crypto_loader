@@ -21,7 +21,7 @@ func NewBinance(client *binance.Manager) *Binance {
 	return &Binance{client: client}
 }
 
-func (c *Binance) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
+func (c *Binance) LoadPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	result := make([]domain.SymbolPrice, 0, 2500)
 	var binancePrices []binance_domain.PriceSymbolDTO
 	err := backoff.Retry(func() error {
@@ -176,4 +176,21 @@ func (c *Binance) convertCandlesticks(
 		})
 	}
 	return res
+}
+
+func (c *Binance) LoadSymbolInfo(ctx context.Context) ([]domain.SymbolInfo, error) {
+	exchangeInfo, err := c.client.GetExchangeInformation(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]domain.SymbolInfo, 0, len(exchangeInfo.Symbols))
+	for _, item := range exchangeInfo.Symbols {
+		result = append(result, domain.SymbolInfo{
+			Symbol:     item.Symbol,
+			BaseAsset:  item.BaseAsset,
+			QuoteAsset: item.QuoteAsset,
+		})
+	}
+
+	return result, nil
 }

@@ -19,7 +19,7 @@ func NewBitget(client *bitget.Client) *Bitget {
 	return &Bitget{client: client}
 }
 
-func (c *Bitget) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
+func (c *Bitget) LoadPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	result := make([]domain.SymbolPrice, 0, 500)
 	var tickerResp bitget.TickersResponse
 	err := backoff.Retry(func() error {

@@ -65,6 +65,18 @@ func (m *Manager) GetPrice(ctx context.Context) ([]domain.PriceSymbolDTO, error)
 	return prices, nil
 }
 
+func (m *Manager) GetExchangeInformation(ctx context.Context) (domain.ExchangeInfoDTO, error) {
+	body, err := m.executeRequest(m.spotRequest.ExchangeInformation(ctx))
+	if err != nil {
+		return domain.ExchangeInfoDTO{}, err
+	}
+	info := domain.ExchangeInfoDTO{}
+	if err := json.Unmarshal(body, &info); err != nil {
+		return domain.ExchangeInfoDTO{}, err
+	}
+	return info, nil
+}
+
 func (m *Manager) PriceChangeStatistics(
 	ctx context.Context, symbols []string, widowSize string,
 ) ([]domain.PriceChangeStatisticDTO, error) {

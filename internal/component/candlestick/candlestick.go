@@ -3,93 +3,80 @@ package candlestick
 import (
 	"context"
 	"github.com/AlekseyPorandaykin/crypto_loader/domain"
-	"github.com/AlekseyPorandaykin/crypto_loader/dto"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
-	"github.com/pkg/errors"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/service/candlestick"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/system"
 	"time"
 )
 
+type CandleLoader interface {
+	FutureCandlestickOneHour(ctx context.Context, symbol string) ([]domain.Candlestick, error)
+	FutureCandlestickFourHour(ctx context.Context, symbol string) ([]domain.Candlestick, error)
+}
+
 type Candlestick struct {
-	candlestickStorage *storage.Candlestick
-	priceStorage       *storage.Price
-	symbolStorage      *storage.Symbol
+	candleService *candlestick.Candlestick
+	exchanges     []string
+
+	loaders map[string]CandleLoader
 }
 
-func NewCandlestick(
-	candlestickStorage *storage.Candlestick, priceStorage *storage.Price, symbolStorage *storage.Symbol,
-) *Candlestick {
+func NewCandlestick(candleService *candlestick.Candlestick) *Candlestick {
 	return &Candlestick{
-		candlestickStorage: candlestickStorage,
-		priceStorage:       priceStorage,
-		symbolStorage:      symbolStorage,
+		loaders:       make(map[string]CandleLoader),
+		candleService: candleService,
 	}
 }
 
-func (a *Candlestick) SymbolSnapshot(ctx context.Context, exchange, symbol string) (domain.SymbolSnapshot, error) {
-	price, err := a.priceStorage.LastPrice(ctx, exchange, symbol)
-	if err != nil {
-		return domain.SymbolSnapshot{}, errors.Wrap(err, "error get lastPrice")
-	}
-	if !a.symbolStorage.HasExchange(exchange) {
-		return domain.SymbolSnapshot{}, errors.New("not found exchange")
-	}
-	if !a.symbolStorage.HasSymbol(exchange, symbol) {
-		return domain.SymbolSnapshot{}, errors.New("not found symbol")
-	}
-
-	return domain.SymbolSnapshot{
-		Symbol:        symbol,
-		Exchange:      exchange,
-		Price:         price.Price,
-		CreatedAt:     time.Now().In(time.UTC),
-		Candlestick1H: a.candlestickStorage.LastCandlestick(ctx, exchange, symbol, domain.OneHourCandlestickInterval),
-		Candlestick4H: a.candlestickStorage.LastCandlestick(ctx, exchange, symbol, domain.FourHourCandlestickInterval),
-	}, nil
+func (c *Candlestick) AddLoader(exchange string, loader CandleLoader) {
+	c.loaders[exchange] = loader
 }
 
-func (a *Candlestick) Candlesticks(ctx context.Context, exchange, symbol string, interval domain.CandlestickInterval) (
-	[]dto.Candlestick, error,
-) {
-	if !a.symbolStorage.HasExchange(exchange) {
-		return nil, errors.New("not found exchange")
+func (c *Candlestick) Run(ctx context.Context) {
+	for ex := range c.loaders {
+		go c.load(ctx, ex)
 	}
-	if !a.symbolStorage.HasSymbol(exchange, symbol) {
-		return nil, errors.New("not found symbol")
-	}
-	if !domain.HasCandlestickInterval(interval) {
-		return nil, errors.New("not found interval")
-	}
-	candles := a.candlestickStorage.Candlestick(ctx, exchange, symbol, interval)
-	res := make([]dto.Candlestick, 0, len(candles))
-	for _, candle := range candles {
-		res = append(res, candlesticksToDTO(candle))
-	}
-	return res, nil
 }
 
-func candlesticksToDTO(data domain.Candlestick) dto.Candlestick {
-	var openTime, closeTime, createdAt string
-	if !data.OpenTime.IsZero() {
-		openTime = data.OpenTime.In(time.UTC).Format(time.RFC3339)
+func (c *Candlestick) load(ctx context.Context, exchange string) {
+	loader, has := c.loaders[exchange]
+	if !has {
+		return
 	}
-	if !data.CloseTime.IsZero() {
-		closeTime = data.CloseTime.In(time.UTC).Format(time.RFC3339)
-	}
-	if !data.CreatedAt.IsZero() {
-		createdAt = data.CreatedAt.In(time.UTC).Format(time.RFC3339)
-	}
-	return dto.Candlestick{
-		Symbol:       data.Symbol,
-		Exchange:     data.Exchange,
-		OpenTime:     openTime,
-		CloseTime:    closeTime,
-		OpenPrice:    data.OpenPrice,
-		HighPrice:    data.HighPrice,
-		LowPrice:     data.LowPrice,
-		ClosePrice:   data.ClosePrice,
-		Volume:       data.Volume,
-		NumberTrades: data.NumberTrades,
-		Interval:     string(data.Interval),
-		CreatedAt:    createdAt,
-	}
+	system.Go(func() {
+		c.candleService.LoadFutureCandlestickOneHour(ctx, exchange, loader)
+		ticker := time.NewTicker(100 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				ticker.Stop()
+				c.candleService.LoadFutureCandlestickOneHour(ctx, exchange, loader)
+				ticker.Reset(durationToNextHour())
+			}
+		}
+	})
+
+	system.Go(func() {
+		c.candleService.LoadFutureCandlestickFourHour(ctx, exchange, loader)
+		ticker := time.NewTicker(100 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				ticker.Stop()
+				c.candleService.LoadFutureCandlestickFourHour(ctx, exchange, loader)
+				ticker.Reset(durationToNextHour())
+			}
+		}
+	})
+}
+
+func durationToNextHour() time.Duration {
+	now := time.Now().In(time.UTC)
+	nextExecute := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 10, 0, time.UTC)
+	return nextExecute.Sub(now)
 }

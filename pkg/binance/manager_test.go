@@ -33,6 +33,16 @@ func TestClient_GetPrice(t *testing.T) {
 	}
 	_ = data
 }
+func TestClient_GetExchangeInformation(t *testing.T) {
+	c, err := NewManager("https://api.binance.com", "futureHost")
+	if err != nil {
+		return
+	}
+	defer c.Close()
+	c.WithSender(sender.NewLogger(zap.L(), sender.NewBasic()))
+	data, _ := c.GetExchangeInformation(context.TODO())
+	_ = data
+}
 func TestClient_Ping(t *testing.T) {
 	c, err := NewManager("https://api.binance.com", "https://testnet.binancefuture.com")
 	if err != nil {

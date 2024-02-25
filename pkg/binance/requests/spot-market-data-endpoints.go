@@ -19,6 +19,18 @@ func (c *SpotRequest) SymbolPriceTicker(ctx context.Context) (*http.Request, int
 	req.WithContext(ctx)
 	return req, 4, nil
 }
+func (c *SpotRequest) ExchangeInformation(ctx context.Context) (*http.Request, int, error) {
+	req, err := http.NewRequest(
+		http.MethodGet,
+		c.host.JoinPath("/api/v3/exchangeInfo").String(),
+		nil,
+	)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "error create request")
+	}
+	req.WithContext(ctx)
+	return req, 4, nil
+}
 
 func (c *SpotRequest) RollingWindowPriceChangeStatistics(
 	ctx context.Context, symbols []string, widowSize string,

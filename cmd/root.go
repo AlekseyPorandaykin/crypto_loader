@@ -4,20 +4,26 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/AlekseyPorandaykin/crypto_loader/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/clients"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/candlestick"
-	http_server "github.com/AlekseyPorandaykin/crypto_loader/internal/component/controller"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/loaders"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/order"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/exchange"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/price"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/component/server/grpc"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/config"
+	http_server "github.com/AlekseyPorandaykin/crypto_loader/internal/controller"
+	candlestick_service "github.com/AlekseyPorandaykin/crypto_loader/internal/service/candlestick"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/service/order"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/service/symbol"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/memory"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/repositories"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance"
 	binance_sender "github.com/AlekseyPorandaykin/crypto_loader/pkg/binance/sender"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bitget"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5"
 	bybit_sender "github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/sender"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/database"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/gateio"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kraken"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/kucoin"
@@ -25,7 +31,7 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/mexc"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/okx"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/server/http"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/shutdown"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/system"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"os/signal"
@@ -33,7 +39,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use: "crypto-loader", Short: "Load prices from external sources",
+	Use: "crypto-loader", Short: "LoadPrices prices from external sources",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer cancel()
@@ -48,6 +54,7 @@ var rootCmd = &cobra.Command{
 		}
 		defer binanceClient.Close()
 		binanceClient.WithSender(binance_sender.NewBasic())
+
 		byBitClient, err := v5.NewClient(conf.BybitHost, bybit_sender.NewBasic())
 		if err != nil {
 			fmt.Println("Error init byBitClient: ", err.Error())
@@ -85,7 +92,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		//DB
-		db, err := repositories.CreateDB(conf.ConfDB)
+		db, err := database.CreateConnection(conf.ConfDB)
 		if err != nil {
 			fmt.Println("Error init database: ", err.Error())
 			return
@@ -104,59 +111,64 @@ var rootCmd = &cobra.Command{
 
 		//Application
 
-		priceLoader := loaders.NewPrice(priceStorage, symbolStorage)
-		priceLoader.AddClient("binance", binanceAdapter)
-		priceLoader.AddClient("byBit", clients.NewByBit(byBitClient))
-		priceLoader.AddClient("kukoin", clients.NewKucoin(kukoinClient))
-		priceLoader.AddClient("okx", clients.NewOkx(okxClient))
-		priceLoader.AddClient("gate.io", clients.NewGateIo(gateIoClient))
-		priceLoader.AddClient("kraken", clients.NewKraken(krakenClient))
-		priceLoader.AddClient("bitget", clients.NewBitget(bitgetClient))
-		priceLoader.AddClient("mexc", clients.NewMexc(mexcClient))
+		priceLoader := price.NewPrice(priceStorage, symbolStorage)
+		priceLoader.AddClient(domain.Binance, binanceAdapter)
+		priceLoader.AddClient(domain.ByBit, clients.NewByBit(byBitClient))
+		priceLoader.AddClient(domain.KuKoin, clients.NewKucoin(kukoinClient))
+		priceLoader.AddClient(domain.Okx, clients.NewOkx(okxClient))
+		priceLoader.AddClient(domain.GateIo, clients.NewGateIo(gateIoClient))
+		priceLoader.AddClient(domain.Kraken, clients.NewKraken(krakenClient))
+		priceLoader.AddClient(domain.BitGet, clients.NewBitget(bitgetClient))
+		priceLoader.AddClient(domain.Mexc, clients.NewMexc(mexcClient))
 
-		candleLoader := loaders.NewCandlestick(symbolStorage, candleStorage)
-		candleLoader.AddLoader("binance", binanceAdapter)
+		exRepo := memory.NewExchangeRepository()
+
+		candlestickLoader := candlestick_service.NewCandlestick(candleStorage, priceStorage, symbolStorage, exRepo)
+
+		candleLoader := candlestick.NewCandlestick(candlestickLoader)
+		candleLoader.AddLoader(domain.Binance, binanceAdapter)
 
 		order := order.NewOrder()
-		order.AddExchange("binance", binanceAdapter)
+		order.AddExchange(domain.Binance, binanceAdapter)
+		ex := exchange.NewExchange(exRepo)
+		ex.AddSymbolInfoLoader(domain.Binance, binanceAdapter)
 
-		agg := candlestick.NewCandlestick(candleStorage, priceStorage, symbolStorage)
+		symbolService := symbol.NewSymbol(candleStorage, priceStorage, symbolStorage, exRepo)
 
 		//Servers
 		s := http.NewServer()
-		controllerService := http_server.NewController(conf.HttpAddr, priceStorage, order, agg)
+		controllerService := http_server.NewController(conf.HttpAddr, priceStorage, order, candlestickLoader, symbolService)
 		s.RegistrationPage(controllerService)
+		s.RegistrationApi(controllerService)
 
 		servGrpc := grpc.NewServer(priceStorage, conf.GrpcAddr)
 		defer servGrpc.Close()
 
 		//Runs
-		go func() {
-			defer shutdown.HandlePanic()
+		system.Go(func() {
 			priceStorage.Run(ctx)
-		}()
-		go func() {
-			defer shutdown.HandlePanic()
+		})
+		system.Go(func() {
 			priceLoader.Run(ctx, conf.DurationPriceRequest)
-		}()
-		go func() {
-			defer shutdown.HandlePanic()
+		})
+		system.Go(func() {
 			candleLoader.Run(ctx)
-		}()
-		go func() {
-			defer shutdown.HandlePanic()
+		})
+		system.Go(func() {
+			ex.Run(ctx)
+		})
+		system.Go(func() {
 			defer cancel()
 			if err := s.Run("localhost", conf.HttpAddr); err != nil && !errors.Is(err, context.Canceled) {
 				zap.L().Error("failed start serve", zap.Error(err))
 			}
-		}()
-		go func() {
-			defer shutdown.HandlePanic()
+		})
+		system.Go(func() {
 			defer cancel()
 			if err := servGrpc.Start(); err != nil && !errors.Is(err, context.Canceled) {
 				zap.L().Error("failed start server", zap.Error(err))
 			}
-		}()
+		})
 		<-ctx.Done()
 	},
 }

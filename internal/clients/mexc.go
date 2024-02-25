@@ -18,7 +18,7 @@ func NewMexc(client *mexc.Client) *Mexc {
 	return &Mexc{client: client}
 }
 
-func (c *Mexc) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
+func (c *Mexc) LoadPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	result := make([]domain.SymbolPrice, 0, 2000)
 	var priceSymbols []mexc.PriceSymbol
 	err := backoff.Retry(func() error {

@@ -59,3 +59,16 @@ func (r *Trade) GetTradeHistory(
 		cred.ApiSecret,
 	)
 }
+
+func (r *Trade) PlaceOrder(ctx context.Context, cred CredentialParam, param PlaceOrderParam) (*http.Request, error) {
+	return personalRequest(
+		ctx,
+		Request{
+			Url:    r.host.JoinPath("/v5/order/create").String(),
+			Method: http.MethodPost,
+			Params: param.Params(),
+		},
+		cred.ApiKey,
+		cred.ApiSecret,
+	)
+}

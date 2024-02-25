@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/repositories"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/database"
 	"time"
 )
 
@@ -21,7 +21,7 @@ type AppConfig struct {
 	MexcHost          string
 
 	//DB
-	ConfDB repositories.Config
+	ConfDB database.Config
 
 	HttpAddr   string
 	GrpcAddr   string
@@ -43,7 +43,7 @@ func Create() AppConfig {
 		KrakenHost: "https://api.kraken.com/",
 		BitgetHost: "https://api.bitget.com/",
 		MexcHost:   "https://api.mexc.com/",
-		ConfDB: repositories.Config{
+		ConfDB: database.Config{
 			Driver:   "postgres",
 			Username: "crypto_app",
 			Password: "developer",

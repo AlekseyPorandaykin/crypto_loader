@@ -19,7 +19,7 @@ func NewByBit(client *v5.Client) *ByBit {
 	return &ByBit{client: client}
 }
 
-func (c *ByBit) Load(ctx context.Context) ([]domain.SymbolPrice, error) {
+func (c *ByBit) LoadPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	result := make([]domain.SymbolPrice, 0, 500)
 	var tickerResp v5.TickerResponse
 	err := backoff.Retry(func() error {
