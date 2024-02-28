@@ -1,5 +1,9 @@
 package v5
 
+import "time"
+
+var ExchangeCreated = time.Date(2018, 3, 1, 0, 0, 0, 0, time.UTC)
+
 type CommonResponse struct {
 	//https://bybit-exchange.github.io/docs/v5/error#uma--uta--futures-of-classic-account
 	Code       int         `json:"retCode"`    //Success/Error code

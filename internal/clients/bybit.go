@@ -54,3 +54,20 @@ func (c *ByBit) LoadPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 func (c *ByBit) CreateFutureOrder(cred domain.ExchangeCredential, order domain.FutureOrder) ([]dto.OrderDTO, error) {
 	return nil, nil
 }
+
+func (c *ByBit) LoadSymbolInfo(ctx context.Context) ([]domain.SymbolInfo, error) {
+	instrumentInfo, err := c.client.MarketInstrumentsInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]domain.SymbolInfo, 0, len(instrumentInfo.Result.List))
+	for _, item := range instrumentInfo.Result.List {
+		result = append(result, domain.SymbolInfo{
+			Symbol:     item.Symbol,
+			BaseAsset:  item.BaseCoin,
+			QuoteAsset: item.QuoteCoin,
+		})
+	}
+
+	return result, nil
+}

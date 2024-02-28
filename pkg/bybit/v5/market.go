@@ -3,7 +3,7 @@ package v5
 import (
 	"context"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
-	"io"
+	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/response"
 )
 
 func (c *Client) MarketSpotTicker(ctx context.Context) (TickerResponse, error) {
@@ -58,17 +58,15 @@ func (c *Client) MarketOptionTicker(ctx context.Context) (TickerResponse, error)
 	return result, nil
 }
 
-func (c *Client) MarketInstrumentsInfo(ctx context.Context) (any, error) {
+func (c *Client) MarketInstrumentsInfo(ctx context.Context) (response.InstrumentsInfoResponse, error) {
 	req, err := c.marketRequest.GetInstrumentsInfo(ctx, domain.SpotOrderCategory)
 	if err != nil {
-		return nil, WrapErrCreateRequest(err)
+		return response.InstrumentsInfoResponse{}, WrapErrCreateRequest(err)
 	}
-	resp, err := c.sender.Send(req)
-	if err != nil {
-		return nil, err
+	result := response.InstrumentsInfoResponse{}
+	if err := c.sendRequest(req, &result); err != nil {
+		return response.InstrumentsInfoResponse{}, err
 	}
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
 
-	return data, err
+	return result, err
 }

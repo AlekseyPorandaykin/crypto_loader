@@ -108,12 +108,13 @@ var rootCmd = &cobra.Command{
 
 		//Clients
 		binanceAdapter := clients.NewBinance(binanceClient)
+		bybitAdapter := clients.NewByBit(byBitClient)
 
 		//Application
 
 		priceLoader := price.NewPrice(priceStorage, symbolStorage)
 		priceLoader.AddClient(domain.Binance, binanceAdapter)
-		priceLoader.AddClient(domain.ByBit, clients.NewByBit(byBitClient))
+		priceLoader.AddClient(domain.ByBit, bybitAdapter)
 		priceLoader.AddClient(domain.KuKoin, clients.NewKucoin(kukoinClient))
 		priceLoader.AddClient(domain.Okx, clients.NewOkx(okxClient))
 		priceLoader.AddClient(domain.GateIo, clients.NewGateIo(gateIoClient))
@@ -132,6 +133,7 @@ var rootCmd = &cobra.Command{
 		order.AddExchange(domain.Binance, binanceAdapter)
 		ex := exchange.NewExchange(exRepo)
 		ex.AddSymbolInfoLoader(domain.Binance, binanceAdapter)
+		ex.AddSymbolInfoLoader(domain.ByBit, bybitAdapter)
 
 		symbolService := symbol.NewSymbol(candleStorage, priceStorage, symbolStorage, exRepo)
 

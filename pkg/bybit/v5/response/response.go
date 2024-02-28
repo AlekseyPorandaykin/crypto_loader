@@ -305,3 +305,37 @@ type TransactionLogsResponse struct {
 	CommonResponse
 	Result TransactionLogs `json:"result"`
 }
+
+type InstrumentInfo struct {
+	Symbol        string `json:"symbol"`
+	BaseCoin      string `json:"baseCoin"`
+	QuoteCoin     string `json:"quoteCoin"`
+	Innovation    string `json:"innovation"`
+	Status        string `json:"status"`
+	MarginTrading string `json:"marginTrading"`
+	LotSizeFilter struct {
+		BasePrecision  string `json:"basePrecision"`
+		QuotePrecision string `json:"quotePrecision"`
+		MinOrderQty    string `json:"minOrderQty"`
+		MaxOrderQty    string `json:"maxOrderQty"`
+		MinOrderAmt    string `json:"minOrderAmt"`
+		MaxOrderAmt    string `json:"maxOrderAmt"`
+	} `json:"lotSizeFilter"`
+	PriceFilter struct {
+		TickSize string `json:"tickSize"`
+	} `json:"priceFilter"`
+	RiskParameters struct {
+		LimitParameter  string `json:"limitParameter"`
+		MarketParameter string `json:"marketParameter"`
+	} `json:"riskParameters"`
+}
+
+type InstrumentsInfo struct {
+	Category string           `json:"category"`
+	List     []InstrumentInfo `json:"list"`
+}
+
+type InstrumentsInfoResponse struct {
+	CommonResponse
+	Result InstrumentsInfo `json:"result"`
+}
