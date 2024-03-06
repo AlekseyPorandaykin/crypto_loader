@@ -84,13 +84,13 @@ func (p *Price) SavePrices(ctx context.Context, prices []domain.SymbolPrice) err
 
 func (p *Price) LastPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 	var symbolPrices []domain.SymbolPrice
-	p.muPrices.Lock()
+	p.muLastPrice.Lock()
 	for _, exchangePrices := range p.lastPrices {
 		for _, lp := range exchangePrices {
 			symbolPrices = append(symbolPrices, lp)
 		}
 	}
-	p.muPrices.Unlock()
+	p.muLastPrice.Unlock()
 	if len(symbolPrices) > 0 {
 		return symbolPrices, nil
 	}
@@ -117,7 +117,7 @@ func (p *Price) LastPrice(ctx context.Context, exchange, symbol string) (domain.
 
 func (p *Price) SymbolPrice(ctx context.Context, symbol string) ([]domain.SymbolPrice, error) {
 	var symbolPrices []domain.SymbolPrice
-	p.muPrices.Lock()
+	p.muLastPrice.Lock()
 	for _, exchangePrices := range p.lastPrices {
 		for _, price := range exchangePrices {
 			if price.Symbol == symbol {
@@ -125,7 +125,7 @@ func (p *Price) SymbolPrice(ctx context.Context, symbol string) ([]domain.Symbol
 			}
 		}
 	}
-	p.muPrices.Unlock()
+	p.muLastPrice.Unlock()
 	if len(symbolPrices) > 0 {
 		return symbolPrices, nil
 	}
@@ -138,11 +138,11 @@ func (p *Price) SymbolPrice(ctx context.Context, symbol string) ([]domain.Symbol
 
 func (p *Price) ExchangePrice(ctx context.Context, exchange string) ([]domain.SymbolPrice, error) {
 	var symbolPrices []domain.SymbolPrice
-	p.muPrices.Lock()
+	p.muLastPrice.Lock()
 	for _, price := range p.lastPrices[exchange] {
 		symbolPrices = append(symbolPrices, price)
 	}
-	p.muPrices.Unlock()
+	p.muLastPrice.Unlock()
 	if len(symbolPrices) > 0 {
 		return symbolPrices, nil
 	}
