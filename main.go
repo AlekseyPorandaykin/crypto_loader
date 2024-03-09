@@ -7,11 +7,19 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/monitoring"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/system"
 	"go.uber.org/zap"
+	"os"
 )
 
-var version string
+var (
+	version string
+	homeDir string
+)
 
 func main() {
+	if homeDir == "" {
+		homeDir, _ = os.Getwd()
+	}
+	_ = os.Setenv("APP_DIR", homeDir)
 	logger.InitDefaultLogger()
 	defer func() { _ = zap.L().Sync() }()
 	zap.L().Debug("Start app", zap.String("version", version))

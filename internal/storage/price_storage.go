@@ -35,6 +35,7 @@ func (p *Price) Run(ctx context.Context) {
 }
 
 func (p *Price) runUpdatePrices(ctx context.Context) {
+	p.UpdatePrices(ctx)
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 	for {

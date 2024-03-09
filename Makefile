@@ -4,7 +4,7 @@ BIN := "./bin/crypto_loader"
 VERSION :=$(shell date)
 
 build:
-	go build -o=$(BIN) -ldflags="-X 'main.version=${VERSION}' -X 'github.com/AlekseyPorandaykin/crypto_loader/cmd.homeDir=${HOME_PATH}'" .
+	go build -o=$(BIN) -ldflags="-X 'main.version=${VERSION}' -X 'main.homeDir=${HOME_PATH}'" .
 
 linters:
 	go vet .

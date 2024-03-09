@@ -17,7 +17,7 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/service/symbol"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/memory"
-	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/repositories"
+	"github.com/AlekseyPorandaykin/crypto_loader/internal/storage/sqlite"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/binance"
 	binance_sender "github.com/AlekseyPorandaykin/crypto_loader/pkg/binance/sender"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bitget"
@@ -39,7 +39,8 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use: "crypto-loader", Short: "LoadPrices prices from external sources",
+	Use:   "crypto-loader",
+	Short: "LoadPrices prices from external sources",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer cancel()
@@ -100,7 +101,7 @@ var rootCmd = &cobra.Command{
 		defer func() { _ = db.Close() }()
 
 		//Repository
-		priceRepo := repositories.NewPriceRepository(db)
+		priceRepo := sqlite.NewPriceRepository(db)
 		//Storage
 		priceStorage := storage.NewPriceStorage(priceRepo)
 		symbolStorage := storage.NewSymbol()

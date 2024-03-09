@@ -1,4 +1,4 @@
-package repositories
+package sqlite
 
 import (
 	"context"
@@ -16,12 +16,6 @@ var _ domain.PriceStorage = (*PriceRepository)(nil)
 
 type PriceRepository struct {
 	db database.Database
-}
-
-func NewPriceRepository(db *sqlx.DB) *PriceRepository {
-	return &PriceRepository{
-		db: db,
-	}
 }
 
 func (repo *PriceRepository) SavePrices(ctx context.Context, prices []domain.SymbolPrice) error {
@@ -44,9 +38,10 @@ func (repo *PriceRepository) SavePrices(ctx context.Context, prices []domain.Sym
 		)
 	}
 	query := fmt.Sprintf(
-		"INSERT INTO crypto_loader.prices(price, symbol,exchange,datetime) VALUES %s ON CONFLICT (symbol, exchange) DO UPDATE SET price=EXCLUDED.price, datetime=EXCLUDED.datetime, updated_at=NOW()",
+		"INSERT INTO prices(price, symbol,exchange,datetime) VALUES %s",
 		strings.Join(values, ", "),
 	)
+	_, _ = repo.db.ExecContext(ctx, `DELETE FROM prices WHERE 1`)
 	_, err := repo.db.ExecContext(ctx, query)
 	if err != nil {
 		return err
@@ -60,7 +55,7 @@ func (repo *PriceRepository) LastPrices(ctx context.Context) ([]domain.SymbolPri
 	}(time.Now())
 	var (
 		prices = make([]domain.SymbolPrice, 0, 300_000)
-		query  = `SELECT * FROM crypto_loader.prices ORDER BY datetime`
+		query  = `SELECT * FROM prices ORDER BY datetime`
 	)
 	if err := repo.db.SelectContext(ctx, &prices, query); err != nil {
 		return nil, err
@@ -74,7 +69,7 @@ func (repo *PriceRepository) SymbolPrice(ctx context.Context, symbol string) ([]
 	}(time.Now())
 	var (
 		prices = make([]domain.SymbolPrice, 0, 300_000)
-		query  = `SELECT price, symbol, exchange, datetime, updated_at FROM crypto_loader.prices WHERE symbol=$1 ORDER BY datetime`
+		query  = `SELECT price, symbol, exchange, datetime, updated_at FROM prices WHERE symbol=$1 ORDER BY datetime`
 	)
 	if err := repo.db.SelectContext(ctx, &prices, query, symbol); err != nil {
 		return nil, err
@@ -88,10 +83,16 @@ func (repo *PriceRepository) ExchangePrice(ctx context.Context, exchange string)
 	}(time.Now())
 	var (
 		prices = make([]domain.SymbolPrice, 0, 300_000)
-		query  = `SELECT price, symbol, exchange, datetime, updated_at FROM crypto_loader.prices WHERE exchange=$1 ORDER BY datetime`
+		query  = `SELECT price, symbol, exchange, datetime, updated_at FROM prices WHERE exchange=$1 ORDER BY datetime`
 	)
 	if err := repo.db.SelectContext(ctx, &prices, query, exchange); err != nil {
 		return nil, err
 	}
 	return prices, nil
+}
+
+func NewPriceRepository(db *sqlx.DB) *PriceRepository {
+	return &PriceRepository{
+		db: db,
+	}
 }
