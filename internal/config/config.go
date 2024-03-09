@@ -53,7 +53,7 @@ func Create() AppConfig {
 		//},
 		ConfDB: database.Config{
 			Driver:   "sqlite",
-			PathToDB: "/Users/alexey.porandaikin/Projects/go/projects/crypto_loader/storage/crypto_loader.db",
+			PathToDB: "/storage/crypto_loader.db",
 		},
 		HttpAddr:   "8081",
 		MetricAddr: ":9081",

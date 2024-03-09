@@ -6,6 +6,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
+	"os"
+	"path/filepath"
 )
 
 type Config struct {
@@ -59,7 +61,7 @@ func CreatePostgresConnection(conf Config) (*sqlx.DB, error) {
 }
 
 func CreateSqliteConnection(conf Config) (*sqlx.DB, error) {
-	db, err := sqlx.Open("sqlite3", conf.PathToDB)
+	db, err := sqlx.Open("sqlite3", filepath.Join(os.Getenv("APP_DIR"), conf.PathToDB))
 	if err != nil {
 		return nil, err
 	}
