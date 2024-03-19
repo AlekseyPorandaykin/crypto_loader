@@ -80,7 +80,7 @@ func (c *Client) assetCoinsBalance(
 		return response.CoinBalanceResponse{}, WrapErrCreateRequest(err)
 	}
 	if err := c.sendRequest(req, &result); err != nil {
-		return response.CoinBalanceResponse{}, nil
+		return response.CoinBalanceResponse{}, err
 	}
 	return result, nil
 }
