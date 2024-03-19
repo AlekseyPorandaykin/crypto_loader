@@ -6,7 +6,6 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/dto"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/gateio"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/pkg/errors"
 	"strings"
 	"time"
 )
@@ -31,7 +30,7 @@ func (c *GateIo) LoadPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 		return nil
 	}, backoff.NewExponentialBackOff())
 	if err != nil {
-		return nil, errors.Wrap(err, "error get price from gateio")
+		return nil, err
 	}
 	currentTime := time.Now()
 	for _, price := range prices {
