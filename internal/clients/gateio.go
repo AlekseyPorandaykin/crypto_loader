@@ -31,7 +31,7 @@ func (c *GateIo) LoadPrices(ctx context.Context) ([]domain.SymbolPrice, error) {
 		return nil
 	}, backoff.NewExponentialBackOff())
 	if err != nil {
-		return nil, errors.Wrap(err, "error get price from binance")
+		return nil, errors.Wrap(err, "error get price from gateio")
 	}
 	currentTime := time.Now()
 	for _, price := range prices {
