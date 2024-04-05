@@ -334,3 +334,63 @@ func (p PlaceOrderParam) Params() []Param {
 
 	return params
 }
+
+type ClosedPnlParam struct {
+	Category  domain.OrderCategory
+	Symbol    string
+	StartTime time.Time
+	EndTime   time.Time
+	Limit     int
+	Cursor    string
+}
+
+func (p ClosedPnlParam) Params() []Param {
+	var params []Param
+	params = append(params, Param{Key: "category", Value: string(p.Category)})
+	if p.Symbol != "" {
+		params = append(params, Param{Key: "symbol", Value: p.Symbol})
+	}
+	if !p.StartTime.IsZero() {
+		params = append(params, Param{Key: "startTime", Value: strconv.Itoa(int(p.StartTime.UnixMilli()))})
+	}
+	if !p.EndTime.IsZero() {
+		params = append(params, Param{Key: "endTime", Value: strconv.Itoa(int(p.EndTime.UnixMilli()))})
+	}
+	if p.Limit > 0 {
+		params = append(params, Param{Key: "limit", Value: strconv.Itoa(p.Limit)})
+	}
+	if p.Cursor != "" {
+		params = append(params, Param{Key: "cursor", Value: p.Cursor})
+	}
+	return params
+}
+
+type PositionInfoParam struct {
+	Category   domain.OrderCategory
+	Symbol     string
+	BaseCoin   string
+	SettleCoin string
+	Limit      int
+	Cursor     string
+}
+
+func (p PositionInfoParam) Params() []Param {
+	var params []Param
+	params = append(params, Param{Key: "category", Value: string(p.Category)})
+	if p.Symbol != "" {
+		params = append(params, Param{Key: "symbol", Value: p.Symbol})
+	}
+	if p.BaseCoin != "" {
+		params = append(params, Param{Key: "baseCoin", Value: p.BaseCoin})
+	}
+	if p.SettleCoin != "" {
+		params = append(params, Param{Key: "settleCoin", Value: p.SettleCoin})
+	}
+	if p.Limit > 0 {
+		params = append(params, Param{Key: "limit", Value: strconv.Itoa(p.Limit)})
+	}
+	if p.Cursor != "" {
+		params = append(params, Param{Key: "cursor", Value: p.Cursor})
+	}
+	return params
+}

@@ -339,3 +339,81 @@ type InstrumentsInfoResponse struct {
 	CommonResponse
 	Result InstrumentsInfo `json:"result"`
 }
+
+type ClosedPnl struct {
+	Symbol        string `json:"symbol"`
+	OrderId       string `json:"orderId"`
+	Side          string `json:"side"`
+	Qty           string `json:"qty"`
+	OrderPrice    string `json:"orderPrice"`
+	OrderType     string `json:"orderType"`
+	ExecType      string `json:"execType"` //Exec type. Trade, BustTrade, SessionSettlePnL, Settle, MovePosition
+	ClosedSize    string `json:"closedSize"`
+	CumEntryValue string `json:"cumEntryValue"` //Cumulated Position value
+	AvgEntryPrice string `json:"avgEntryPrice"`
+	CumExitValue  string `json:"cumExitValue"`
+	AvgExitPrice  string `json:"avgExitPrice"`
+	ClosedPnl     string `json:"closedPnl"`
+	FillCount     string `json:"fillCount"`
+	Leverage      string `json:"leverage"`
+	CreatedTime   string `json:"createdTime"`
+	UpdatedTime   string `json:"updatedTime"`
+}
+
+type ListClosedPnl struct {
+	Category       string      `json:"category"`
+	NextPageCursor string      `json:"nextPageCursor"`
+	List           []ClosedPnl `json:"list"`
+}
+
+type ClosedPnlResponse struct {
+	CommonResponse
+	Result ListClosedPnl `json:"result"`
+}
+
+type PositionInfo struct {
+	Symbol                 string `json:"symbol"`
+	Leverage               string `json:"leverage"`
+	AutoAddMargin          int    `json:"autoAddMargin"`
+	AvgPrice               string `json:"avgPrice"`
+	LiqPrice               string `json:"liqPrice"`
+	RiskLimitValue         string `json:"riskLimitValue"`
+	TakeProfit             string `json:"takeProfit"`
+	PositionValue          string `json:"positionValue"`
+	IsReduceOnly           bool   `json:"isReduceOnly"`
+	TpslMode               string `json:"tpslMode"`
+	RiskId                 int    `json:"riskId"`
+	TrailingStop           string `json:"trailingStop"`
+	UnrealisedPnl          string `json:"unrealisedPnl"`
+	MarkPrice              string `json:"markPrice"`
+	AdlRankIndicator       int    `json:"adlRankIndicator"`
+	CumRealisedPnl         string `json:"cumRealisedPnl"`
+	PositionMM             string `json:"positionMM"`
+	CreatedTime            string `json:"createdTime"`
+	PositionIdx            int    `json:"positionIdx"`
+	PositionIM             string `json:"positionIM"`
+	Seq                    int64  `json:"seq"`
+	UpdatedTime            string `json:"updatedTime"`
+	Side                   string `json:"side"`
+	BustPrice              string `json:"bustPrice"`
+	PositionBalance        string `json:"positionBalance"`
+	LeverageSysUpdatedTime string `json:"leverageSysUpdatedTime"`
+	CurRealisedPnl         string `json:"curRealisedPnl"`
+	Size                   string `json:"size"`
+	PositionStatus         string `json:"positionStatus"`
+	MmrSysUpdatedTime      string `json:"mmrSysUpdatedTime"`
+	StopLoss               string `json:"stopLoss"`
+	TradeMode              int    `json:"tradeMode"`
+	SessionAvgPrice        string `json:"sessionAvgPrice"`
+}
+
+type ListPositionInfo struct {
+	Category       string         `json:"category"`
+	NextPageCursor string         `json:"nextPageCursor"`
+	List           []PositionInfo `json:"list"`
+}
+
+type PositionInfoResponse struct {
+	CommonResponse
+	Result ListPositionInfo `json:"result"`
+}

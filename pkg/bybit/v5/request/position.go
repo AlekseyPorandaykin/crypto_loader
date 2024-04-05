@@ -2,7 +2,6 @@ package request
 
 import (
 	"context"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -17,13 +16,21 @@ func NewPosition(host *url.URL) *Position {
 }
 
 func (p *Position) GetPositionInfo(
-	ctx context.Context, apiKey, apiSecret string, category domain.OrderCategory,
+	ctx context.Context, cred CredentialParam, param PositionInfoParam,
 ) (*http.Request, error) {
 	return personalRequest(ctx, Request{
 		Url:    p.host.JoinPath("/v5/position/list").String(),
 		Method: http.MethodGet,
-		Params: []Param{{Key: "category", Value: string(category)}},
-	}, apiKey, apiSecret)
+		Params: param.Params(),
+	}, cred.ApiKey, cred.ApiSecret)
+}
+
+func (p *Position) GetClosedPnL(ctx context.Context, cred CredentialParam, param ClosedPnlParam) (*http.Request, error) {
+	return personalRequest(ctx, Request{
+		Url:    p.host.JoinPath("/v5/position/closed-pnl").String(),
+		Method: http.MethodGet,
+		Params: param.Params(),
+	}, cred.ApiKey, cred.ApiSecret)
 }
 
 func (p *Position) GetMovePositionHistory(
