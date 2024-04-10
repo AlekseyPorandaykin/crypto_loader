@@ -8,6 +8,7 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/service/order"
 	"github.com/AlekseyPorandaykin/crypto_loader/internal/service/symbol"
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -115,7 +116,7 @@ func (app *Controller) snapshot(c echo.Context) error {
 	}
 	snapshot, err := app.symbolService.SymbolSnapshot(c.Request().Context(), exchange, s)
 	if err != nil {
-		return err
+		zap.L().Error("SymbolSnapshot", zap.Error(err))
 	}
 	return c.JSON(http.StatusOK, snapshot)
 }

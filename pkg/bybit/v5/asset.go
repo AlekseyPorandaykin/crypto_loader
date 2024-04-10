@@ -60,17 +60,6 @@ func (c *Client) AssetFundCoinsBalance(
 	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.FundAccountType)
 }
 
-func (c *Client) AssetSpotCoinsBalance(
-	ctx context.Context, apiKey, apiSecret string,
-) (response.CoinBalanceResponse, error) {
-	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.SpotAccountType)
-}
-
-func (c *Client) AssetOptionCoinsBalance(
-	ctx context.Context, apiKey, apiSecret string) (response.CoinBalanceResponse, error) {
-	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.OptionAccountType)
-}
-
 func (c *Client) assetCoinsBalance(
 	ctx context.Context, apiKey, apiSecret string, accountType domain.AccountType,
 ) (response.CoinBalanceResponse, error) {
