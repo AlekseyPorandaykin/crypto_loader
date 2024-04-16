@@ -57,7 +57,8 @@ func (app *Controller) RegistrationApiRoute(g *echo.Group) {
 func (app *Controller) prices(c echo.Context) error {
 	prices, err := app.priceStorage.LastPrices(c.Request().Context())
 	if err != nil {
-		return err
+		zap.L().Error("get last prices", zap.Error(err))
+		return c.JSON(http.StatusOK, nil)
 	}
 	return c.JSON(http.StatusOK, prices)
 }
@@ -65,11 +66,13 @@ func (app *Controller) prices(c echo.Context) error {
 func (app *Controller) symbolPrice(c echo.Context) error {
 	s := c.Param("symbol")
 	if s == "" {
-		return errors.New("empty symbol")
+		zap.L().Error("empty symbol")
+		return c.JSON(http.StatusOK, nil)
 	}
 	prices, err := app.priceStorage.SymbolPrice(c.Request().Context(), s)
 	if err != nil {
-		return err
+		zap.L().Error("get symbol price", zap.Error(err))
+		return c.JSON(http.StatusOK, nil)
 	}
 	if len(prices) == 0 {
 		return c.JSON(http.StatusNotFound, prices)
@@ -80,11 +83,13 @@ func (app *Controller) symbolPrice(c echo.Context) error {
 func (app *Controller) exchangePrice(c echo.Context) error {
 	exchange := c.Param("exchange")
 	if exchange == "" {
-		return errors.New("empty exchange")
+		zap.L().Error("empty exchange")
+		return c.JSON(http.StatusOK, nil)
 	}
 	prices, err := app.priceStorage.ExchangePrice(c.Request().Context(), exchange)
 	if err != nil {
-		return err
+		zap.L().Error("get exchange price", zap.Error(err))
+		return c.JSON(http.StatusOK, nil)
 	}
 	if len(prices) == 0 {
 		return c.JSON(http.StatusNotFound, prices)
@@ -108,11 +113,13 @@ func (app *Controller) createOrder(c echo.Context) error {
 func (app *Controller) snapshot(c echo.Context) error {
 	s := c.Param("symbol")
 	if s == "" {
-		return errors.New("empty symbol")
+		zap.L().Warn("empty symbol")
+		return c.JSON(http.StatusOK, domain.SymbolSnapshot{})
 	}
 	exchange := c.Param("exchange")
 	if exchange == "" {
-		return errors.New("empty exchange")
+		zap.L().Warn("empty exchange")
+		return c.JSON(http.StatusOK, domain.SymbolSnapshot{})
 	}
 	snapshot, err := app.symbolService.SymbolSnapshot(c.Request().Context(), exchange, s)
 	if err != nil {
@@ -124,24 +131,27 @@ func (app *Controller) snapshot(c echo.Context) error {
 func (app *Controller) candlesticks(c echo.Context) error {
 	s := c.Param("symbol")
 	if s == "" {
-		return errors.New("empty symbol")
+		zap.L().Error("empty symbol")
+		return c.JSON(http.StatusOK, nil)
 	}
 	exchange := c.Param("exchange")
 	if exchange == "" {
-		return errors.New("empty exchange")
+		zap.L().Error("empty exchange")
+		return c.JSON(http.StatusOK, nil)
 	}
 	interval := c.Param("interval")
 	if interval == "" {
 		return errors.New("empty interval")
 	}
-	snapshot, err := app.candlestick.Candlesticks(
+	candlesticks, err := app.candlestick.Candlesticks(
 		c.Request().Context(), exchange, s, domain.CandlestickInterval(interval),
 	)
 	if err != nil {
-		return err
+		zap.L().Error("get candlesticks", zap.Error(err))
+		return c.JSON(http.StatusOK, nil)
 	}
-	if len(snapshot) == 0 {
-		return c.JSON(http.StatusNotFound, snapshot)
+	if len(candlesticks) == 0 {
+		return c.JSON(http.StatusNotFound, candlesticks)
 	}
-	return c.JSON(http.StatusOK, snapshot)
+	return c.JSON(http.StatusOK, candlesticks)
 }
