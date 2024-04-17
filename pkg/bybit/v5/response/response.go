@@ -417,3 +417,46 @@ type PositionInfoResponse struct {
 	CommonResponse
 	Result ListPositionInfo `json:"result"`
 }
+
+type AccountWalletBalance struct {
+	TotalEquity            string                     `json:"totalEquity"`
+	AccountIMRate          string                     `json:"accountIMRate"`
+	TotalMarginBalance     string                     `json:"totalMarginBalance"`
+	TotalInitialMargin     string                     `json:"totalInitialMargin"`
+	AccountType            string                     `json:"accountType"`
+	TotalAvailableBalance  string                     `json:"totalAvailableBalance"`
+	AccountMMRate          string                     `json:"accountMMRate"`
+	TotalPerpUPL           string                     `json:"totalPerpUPL"`
+	TotalWalletBalance     string                     `json:"totalWalletBalance"`
+	AccountLTV             string                     `json:"accountLTV"`
+	TotalMaintenanceMargin string                     `json:"totalMaintenanceMargin"`
+	Coin                   []CoinAccountWalletBalance `json:"coin"`
+}
+
+type CoinAccountWalletBalance struct {
+	AvailableToBorrow   string `json:"availableToBorrow"`
+	Bonus               string `json:"bonus"`
+	AccruedInterest     string `json:"accruedInterest"`
+	AvailableToWithdraw string `json:"availableToWithdraw"`
+	TotalOrderIM        string `json:"totalOrderIM"`
+	Equity              string `json:"equity"`
+	TotalPositionMM     string `json:"totalPositionMM"`
+	UsdValue            string `json:"usdValue"`
+	UnrealisedPnl       string `json:"unrealisedPnl"`
+	CollateralSwitch    bool   `json:"collateralSwitch"`
+	SpotHedgingQty      string `json:"spotHedgingQty"`
+	BorrowAmount        string `json:"borrowAmount"`
+	TotalPositionIM     string `json:"totalPositionIM"`
+	WalletBalance       string `json:"walletBalance"`
+	CumRealisedPnl      string `json:"cumRealisedPnl"`
+	Locked              string `json:"locked"`
+	MarginCollateral    bool   `json:"marginCollateral"`
+	Coin                string `json:"coin"`
+}
+
+type AccountWalletBalanceResponse struct {
+	CommonResponse
+	Result struct {
+		List []AccountWalletBalance `json:"list"`
+	} `json:"result"`
+}

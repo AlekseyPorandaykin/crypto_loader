@@ -5,26 +5,19 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/request"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/response"
-	"github.com/pkg/errors"
-	"io"
 )
 
-func (c *Client) AccountWalletBalance(ctx context.Context, apiKey, apiSecret string, account domain.AccountType) (any, error) {
+func (c *Client) AccountWalletBalance(ctx context.Context, apiKey, apiSecret string, account domain.AccountType) (response.AccountWalletBalanceResponse, error) {
 	req, err := c.accountRequest.GetWalletBalance(ctx, apiKey, apiSecret, account)
 	if err != nil {
-		return nil, WrapErrCreateRequest(err)
+		return response.AccountWalletBalanceResponse{}, WrapErrCreateRequest(err)
 	}
-	res, err := c.sender.Send(req)
-	if err != nil {
-		return nil, WrapErrHttpClientDo(err)
+	res := response.AccountWalletBalanceResponse{}
+	if err := c.sendRequest(req, &res); err != nil {
+		return response.AccountWalletBalanceResponse{}, err
 	}
-	if res.Body == nil {
-		return nil, errors.New("empty body response")
-	}
-	defer func() { _ = res.Body.Close() }()
-	data, err := io.ReadAll(res.Body)
 
-	return data, err
+	return res, err
 }
 
 func (c *Client) AccountTransactionLog(
