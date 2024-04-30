@@ -15,11 +15,17 @@ type Candlestick struct {
 	CreatedAt    string  `json:"created_at"`
 }
 
-type SymbolSnapshot struct {
-	Symbol        string      `json:"symbol"`
-	Exchange      string      `json:"exchange"`
-	CreatedAt     string      `json:"created_at"`
-	Price         string      `json:"price"`
-	Candlestick4H Candlestick `json:"candlestick_4h"`
-	Candlestick1H Candlestick `json:"candlestick_1h"`
+type CandlestickBarDTO struct {
+	OpenTime                 float64
+	OpenPrice                string
+	HighPrice                string
+	LowPrice                 string
+	ClosePrice               string
+	Volume                   string
+	CloseTime                float64
+	QuoteAssetVolume         string
+	NumberOfTrades           float64
+	TakerBuyBaseAssetVolume  string
+	TakerBuyQuoteAssetVolume string
+	Ignore                   string
 }

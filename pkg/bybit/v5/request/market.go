@@ -30,3 +30,11 @@ func (r *Market) GetInstrumentsInfo(ctx context.Context, category domain.OrderCa
 		Params: []Param{{Key: "category", Value: string(category)}},
 	})
 }
+
+func (r *Market) GetKline(ctx context.Context, param MarketGetKlineParam) (*http.Request, error) {
+	return createRequest(ctx, Request{
+		Url:    r.host.JoinPath("/v5/market/kline").String(),
+		Method: http.MethodGet,
+		Params: param.Params(),
+	})
+}

@@ -52,7 +52,7 @@ func TestClient_Ping(t *testing.T) {
 	c.WithSender(sender.NewLogger(zap.L(), sender.NewBasic()))
 	data, _ := c.FuturesExchangeInformation(context.TODO())
 	saveToFile(data)
-	//c.FutureCandlestickData(context.TODO(), "BTCUSDT", "1m")
+	c.FutureCandlestickData(context.TODO(), "BTCUSDT", "1m")
 	//c.FutureQueryOrder(
 	//	context.TODO(),
 	//	domain.CredentialDTO{APIKey: apiKeyFuture, ApiSecret: apiSecretFuture},
@@ -138,4 +138,14 @@ func TestManager_QuerySubAccountList(t *testing.T) {
 	c.QuerySubAccountList(
 		domain.CredentialDTO{APIKey: apiKeyFuture, ApiSecret: apiSecretFuture},
 	)
+}
+
+func TestManager_WalletAllCoinsInformation(t *testing.T) {
+	c, err := NewManager("https://api.binance.com", "https://testnet.binancefuture.com")
+	if err != nil {
+		return
+	}
+	defer c.Close()
+	c.WithSender(sender.NewLogger(zap.L(), sender.NewBasic()))
+	c.WalletAllCoinsInformation(context.TODO(), domain.CredentialDTO{APIKey: apiKeyFuture, ApiSecret: apiSecretFuture})
 }

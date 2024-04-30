@@ -18,6 +18,7 @@ type Manager struct {
 	personalSenders   map[string]*sender.Personal
 	spotRequest       *requests.SpotRequest
 	futureRequest     *requests.FutureRequest
+	walletRequest     *requests.WalletRequest
 	subAccountRequest *requests.SubAccount
 	sender            sender.Sender
 }
@@ -35,12 +36,17 @@ func NewManager(spotHost string, futureHost string) (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
+	wr, err := requests.NewWalletRequest(spotHost)
+	if err != nil {
+		return nil, err
+	}
 	return &Manager{
 		sender:            sender.NewBasic(),
 		personalSenders:   make(map[string]*sender.Personal),
 		spotRequest:       sr,
 		futureRequest:     fr,
 		subAccountRequest: sa,
+		walletRequest:     wr,
 	}, nil
 }
 
@@ -278,6 +284,18 @@ func (m *Manager) QuerySubAccountList(cred domain.CredentialDTO) (interface{}, e
 	data, err := m.sendPersonalRequest(cred, req, weight)
 
 	return data, err
+}
+
+func (m *Manager) WalletAllCoinsInformation(ctx context.Context, cred domain.CredentialDTO) ([]byte, error) {
+	req, weight, err := m.walletRequest.AllCoinsInformation(ctx)
+	if err != nil {
+		return nil, err
+	}
+	data, err := m.sendPersonalRequest(cred, req, weight)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func (m *Manager) executeRequest(req *http.Request, weight int, err error) ([]byte, error) {

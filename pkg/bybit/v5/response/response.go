@@ -460,3 +460,43 @@ type AccountWalletBalanceResponse struct {
 		List []AccountWalletBalance `json:"list"`
 	} `json:"result"`
 }
+
+type Candlestick struct {
+	StartTime  string // Start time of the candle (ms)
+	OpenPrice  string // Close price. Is the last traded price when the candle is not closed
+	HighPrice  string
+	LowPrice   string
+	ClosePrice string
+	Volume     string // Trade volume. Unit of contract: pieces of contract. Unit of spot: quantity of coins
+	Turnover   string // Turnover. Unit of figure: quantity of quota coin
+}
+
+type ListKline struct {
+	Symbol   string     `json:"symbol"`
+	Category string     `json:"category"`
+	List     [][]string `json:"list"`
+}
+
+func (lk ListKline) Candlesticks() []Candlestick {
+	res := make([]Candlestick, 0, len(lk.List))
+	for _, item := range lk.List {
+		if len(item) < 7 {
+			continue
+		}
+		res = append(res, Candlestick{
+			StartTime:  item[0],
+			OpenPrice:  item[1],
+			HighPrice:  item[2],
+			LowPrice:   item[3],
+			ClosePrice: item[4],
+			Volume:     item[5],
+			Turnover:   item[6],
+		})
+	}
+	return res
+}
+
+type GetKlineResponse struct {
+	CommonResponse
+	Result ListKline `json:"result"`
+}

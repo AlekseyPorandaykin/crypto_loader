@@ -394,3 +394,28 @@ func (p PositionInfoParam) Params() []Param {
 	}
 	return params
 }
+
+type MarketGetKlineParam struct {
+	Category domain.OrderCategory // Product type. spot,linear,inverse. When category is not passed, use linear by default
+	Symbol   string               // Symbol name
+	Interval string               // Kline interval. 1,3,5,15,30,60,120,240,360,720,D,M,W
+	Start    int                  // The start timestamp (ms)
+	End      int                  // The end timestamp (ms)
+	Limit    int                  // Limit for data size per page. [1, 1000]. Default: 200
+}
+
+func (p MarketGetKlineParam) Params() []Param {
+	var params []Param
+	params = append(params, Param{Key: "symbol", Value: p.Symbol})
+	params = append(params, Param{Key: "interval", Value: p.Interval})
+	if p.Category != "" {
+		params = append(params, Param{Key: "category", Value: string(p.Category)})
+	}
+	if p.Start > 0 {
+		params = append(params, Param{Key: "start", Value: strconv.Itoa(p.Start)})
+	}
+	if p.End > 0 {
+		params = append(params, Param{Key: "end", Value: strconv.Itoa(p.End)})
+	}
+	return params
+}
