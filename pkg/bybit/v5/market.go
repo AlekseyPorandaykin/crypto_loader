@@ -70,7 +70,7 @@ func (c *Client) MarketInstrumentsInfo(ctx context.Context) (response.Instrument
 		return response.InstrumentsInfoResponse{}, err
 	}
 
-	return result, err
+	return result, nil
 }
 
 func (c *Client) MarketGetLinearKlineMonth(ctx context.Context, symbol string) (any, error) {
@@ -117,5 +117,17 @@ func (c *Client) MarketGetKline(ctx context.Context, param request.MarketGetKlin
 	if err := c.sendRequest(req, &res); err != nil {
 		return response.GetKlineResponse{}, err
 	}
-	return res, err
+	return res, nil
+}
+
+func (c *Client) MarketGetOrderBook(ctx context.Context, param request.MarketGetOrderBookParam) (response.GetOrderBookResponse, error) {
+	req, err := c.marketRequest.GetOrderBook(ctx, param)
+	if err != nil {
+		return response.GetOrderBookResponse{}, WrapErrCreateRequest(err)
+	}
+	var res response.GetOrderBookResponse
+	if err := c.sendRequest(req, &res); err != nil {
+		return response.GetOrderBookResponse{}, err
+	}
+	return res, nil
 }

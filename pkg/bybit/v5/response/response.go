@@ -463,10 +463,10 @@ type AccountWalletBalanceResponse struct {
 
 type Candlestick struct {
 	StartTime  string // Start time of the candle (ms)
-	OpenPrice  string // Close price. Is the last traded price when the candle is not closed
+	OpenPrice  string
 	HighPrice  string
 	LowPrice   string
-	ClosePrice string
+	ClosePrice string // Close price. Is the last traded price when the candle is not closed
 	Volume     string // Trade volume. Unit of contract: pieces of contract. Unit of spot: quantity of coins
 	Turnover   string // Turnover. Unit of figure: quantity of quota coin
 }
@@ -499,4 +499,49 @@ func (lk ListKline) Candlesticks() []Candlestick {
 type GetKlineResponse struct {
 	CommonResponse
 	Result ListKline `json:"result"`
+}
+
+type Bid struct {
+	Price string
+	Size  string
+}
+
+type Ask struct {
+	Price string
+	Size  string
+}
+
+type MarketOrderBook struct {
+	Symbol        string     `json:"s"`
+	ListBid       [][]string `json:"b"`   //Bid, buyer. Sort by price desc, b[0] - Bid price, b[1] - Bid size
+	ListAsk       [][]string `json:"a"`   //Ask, seller. Order by price asc, a[0] - Ask price, a[1] - Ask size
+	Timestamp     int        `json:"ts"`  //The timestamp (ms) that the system generates the data
+	UpdateID      int        `json:"u"`   //Update ID, is always in sequence
+	CrossSequence int        `json:"seq"` //Cross sequence
+}
+
+func (o MarketOrderBook) Bids() []Bid {
+	bids := make([]Bid, 0, len(o.ListBid))
+	for i := 0; i < len(o.ListBid); i++ {
+		bids = append(bids, Bid{
+			Price: o.ListBid[i][0],
+			Size:  o.ListBid[i][1],
+		})
+	}
+	return bids
+}
+func (o MarketOrderBook) Asks() []Ask {
+	asks := make([]Ask, 0, len(o.ListAsk))
+	for i := 0; i < len(o.ListAsk); i++ {
+		asks = append(asks, Ask{
+			Price: o.ListAsk[i][0],
+			Size:  o.ListAsk[i][1],
+		})
+	}
+	return asks
+}
+
+type GetOrderBookResponse struct {
+	CommonResponse
+	Result MarketOrderBook `json:"result"`
 }

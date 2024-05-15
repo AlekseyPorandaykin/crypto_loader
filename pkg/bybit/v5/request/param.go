@@ -417,5 +417,24 @@ func (p MarketGetKlineParam) Params() []Param {
 	if p.End > 0 {
 		params = append(params, Param{Key: "end", Value: strconv.Itoa(p.End)})
 	}
+	if p.Limit > 0 {
+		params = append(params, Param{Key: "limit", Value: strconv.Itoa(p.Limit)})
+	}
+	return params
+}
+
+type MarketGetOrderBookParam struct {
+	Category domain.OrderCategory
+	Symbol   string
+	Limit    int
+}
+
+func (p MarketGetOrderBookParam) Params() []Param {
+	var params []Param
+	params = append(params, Param{Key: "symbol", Value: p.Symbol})
+	params = append(params, Param{Key: "category", Value: string(p.Category)})
+	if p.Limit > 0 {
+		params = append(params, Param{Key: "limit", Value: strconv.Itoa(p.Limit)})
+	}
 	return params
 }

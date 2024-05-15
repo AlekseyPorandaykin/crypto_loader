@@ -38,3 +38,10 @@ func (r *Market) GetKline(ctx context.Context, param MarketGetKlineParam) (*http
 		Params: param.Params(),
 	})
 }
+func (r *Market) GetOrderBook(ctx context.Context, param MarketGetOrderBookParam) (*http.Request, error) {
+	return createRequest(ctx, Request{
+		Url:    r.host.JoinPath("/v5/market/orderbook").String(),
+		Method: http.MethodGet,
+		Params: param.Params(),
+	})
+}
