@@ -3,6 +3,7 @@ package response
 import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"strings"
+	"time"
 )
 
 type CheckerResponse interface {
@@ -544,4 +545,45 @@ func (o MarketOrderBook) Asks() []Ask {
 type GetOrderBookResponse struct {
 	CommonResponse
 	Result MarketOrderBook `json:"result"`
+}
+type GetApiKeyInformation struct {
+	Id          string `json:"id"`
+	Note        string `json:"note"`
+	ApiKey      string `json:"apiKey"`
+	ReadOnly    int    `json:"readOnly"`
+	Secret      string `json:"secret"`
+	Permissions struct {
+		ContractTrade []string      `json:"ContractTrade"`
+		Spot          []string      `json:"Spot"`
+		Wallet        []string      `json:"Wallet"`
+		Options       []string      `json:"Options"`
+		Derivatives   []string      `json:"Derivatives"`
+		CopyTrading   []interface{} `json:"CopyTrading"`
+		BlockTrade    []interface{} `json:"BlockTrade"`
+		Exchange      []string      `json:"Exchange"`
+		NFT           []interface{} `json:"NFT"`
+		Affiliate     []interface{} `json:"Affiliate"`
+	} `json:"permissions"`
+	Ips           []string  `json:"ips"`
+	Type          int       `json:"type"`
+	DeadlineDay   int       `json:"deadlineDay"`
+	ExpiredAt     time.Time `json:"expiredAt"`
+	CreatedAt     time.Time `json:"createdAt"`
+	Unified       int       `json:"unified"`
+	Uta           int       `json:"uta"`
+	UserID        int       `json:"userID"`
+	InviterID     int       `json:"inviterID"`
+	VipLevel      string    `json:"vipLevel"`
+	MktMakerLevel string    `json:"mktMakerLevel"`
+	AffiliateID   int       `json:"affiliateID"`
+	RsaPublicKey  string    `json:"rsaPublicKey"`
+	IsMaster      bool      `json:"isMaster"`
+	ParentUid     string    `json:"parentUid"`
+	KycLevel      string    `json:"kycLevel"`
+	KycRegion     string    `json:"kycRegion"`
+}
+
+type GetApiKeyInformationResponse struct {
+	CommonResponse
+	Result GetApiKeyInformation `json:"result"`
 }

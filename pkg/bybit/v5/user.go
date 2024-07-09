@@ -22,3 +22,16 @@ func (c *Client) GetUIDWalletType(ctx context.Context, apiKey, apiSecret string)
 	}
 	return result, nil
 }
+
+func (c *Client) GetApiKey(ctx context.Context, apiKey, apiSecret string) (response.GetApiKeyInformationResponse, error) {
+	req, err := c.userRequest.GetApiKey(ctx, apiKey, apiSecret)
+	if err != nil {
+		return response.GetApiKeyInformationResponse{}, WrapErrCreateRequest(err)
+	}
+	res := response.GetApiKeyInformationResponse{}
+	if err := c.sendRequest(req, &res); err != nil {
+		return response.GetApiKeyInformationResponse{}, err
+	}
+
+	return res, err
+}

@@ -22,3 +22,11 @@ func (r *User) GetUIDWalletType(ctx context.Context, apiKey, apiSecret string) (
 		apiSecret,
 	)
 }
+func (r *User) GetApiKey(ctx context.Context, apiKey, apiSecret string) (*http.Request, error) {
+	return personalRequest(
+		ctx,
+		Request{Url: r.host.JoinPath("/v5/user/query-api").String(), Method: http.MethodGet},
+		apiKey,
+		apiSecret,
+	)
+}
