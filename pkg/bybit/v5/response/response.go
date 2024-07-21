@@ -587,3 +587,13 @@ type GetApiKeyInformationResponse struct {
 	CommonResponse
 	Result GetApiKeyInformation `json:"result"`
 }
+
+type TradeAmendOrder struct {
+	OrderId     string `json:"orderId"`
+	OrderLinkId string `json:"orderLinkId"`
+}
+
+type TradeAmendOrderResponse struct {
+	CommonResponse
+	Result TradeAmendOrder `json:"result"`
+}

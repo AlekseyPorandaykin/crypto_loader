@@ -1,10 +1,12 @@
 package request
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +17,16 @@ import (
 
 const defaultRecvWindow = "5000"
 
+type Params []Param
+
+func (p Params) ToMap() map[string]string {
+	m := make(map[string]string)
+	for _, item := range p {
+		m[item.Key] = item.Value
+	}
+	return m
+}
+
 type Param struct {
 	Key   string
 	Value string
@@ -23,7 +35,7 @@ type Param struct {
 type Request struct {
 	Url        string
 	Method     string
-	Params     []Param
+	Params     Params
 	RecvWindow int
 }
 
@@ -69,6 +81,29 @@ func personalRequest(ctx context.Context, req Request, apiKey, apiSecret string)
 	r.Header.Set("X-BAPI-TIMESTAMP", strconv.FormatInt(t, 10))
 	r.Header.Set("X-BAPI-SIGN-TYPE", "2")
 	r.Header.Set("X-BAPI-RECV-WINDOW", recvWindow)
+
+	return r, nil
+}
+
+func postPersonalRequest(ctx context.Context, req Request, apiKey, apiSecret string) (*http.Request, error) {
+	t := timestamp()
+	body, err := json.Marshal(req.Params.ToMap())
+	if err != nil {
+		return nil, err
+	}
+	hmac256 := hmac.New(sha256.New, []byte(apiSecret))
+	hmac256.Write([]byte(strconv.FormatInt(t, 10) + apiKey + string(body)))
+	signature := hex.EncodeToString(hmac256.Sum(nil))
+
+	r, err := http.NewRequest(req.Method, req.Url, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+	r = r.WithContext(ctx)
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("X-BAPI-API-KEY", apiKey)
+	r.Header.Set("X-BAPI-SIGN", signature)
+	r.Header.Set("X-BAPI-TIMESTAMP", strconv.FormatInt(t, 10))
 
 	return r, nil
 }

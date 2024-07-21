@@ -13,9 +13,6 @@ func (c *Client) PositionInfo(ctx context.Context, cred request.CredentialParam,
 	if err != nil {
 		return response.PositionInfoResponse{}, WrapErrCreateRequest(err)
 	}
-	if err != nil {
-		return response.PositionInfoResponse{}, WrapErrCreateRequest(err)
-	}
 	result := response.PositionInfoResponse{}
 	if err := c.sendRequest(req, &result); err != nil {
 		return response.PositionInfoResponse{}, err

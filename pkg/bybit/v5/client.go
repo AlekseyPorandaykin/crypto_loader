@@ -9,6 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"net/http"
 	"net/url"
+	"strconv"
+	"time"
 )
 
 var ErrCreateRequest = errors.New("error create request")
@@ -70,6 +72,22 @@ func (c *Client) sendRequest(req *http.Request, dest any) error {
 		return errors.New("empty body response")
 	}
 	defer func() { _ = res.Body.Close() }()
+	now := time.Now().In(time.UTC)
+	if res.StatusCode == http.StatusForbidden {
+		time.Sleep(5 * time.Minute)
+		return errors.New("rate limit")
+	}
+	nextRequest := now.Add(1 * time.Minute)
+	limitStatus, _ := strconv.Atoi(res.Header.Get("X-Bapi-Limit-Status"))                    //your remaining requests for current endpoint
+	limit, _ := strconv.Atoi(res.Header.Get("X-Bapi-Limit"))                                 //your current limit for current endpoint
+	resetTimestamp, errParse := strconv.Atoi(res.Header.Get("X-Bapi-Limit-Reset-Timestamp")) //the timestamp indicating when your request limit resets if you have exceeded your rate_limit. Otherwise, this is just the current timestamp.
+	if errParse == nil {
+		nextRequest = time.UnixMilli(int64(resetTimestamp)).In(time.UTC)
+	}
+	diff := nextRequest.Sub(now)
+	if limitStatus < 10 && limit != limitStatus && diff > 0 {
+		time.Sleep(diff)
+	}
 	if err := json.NewDecoder(res.Body).Decode(dest); err != nil {
 		return errors.Wrap(err, "error decode response")
 	}

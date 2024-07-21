@@ -10,37 +10,32 @@ import (
 )
 
 func (c *Client) TradeSpotOpenOrders(ctx context.Context, apiKey, apiSecret string) (response.TradeOpenOrdersResponse, error) {
-	return c.tradeOpenOrders(ctx, apiKey, apiSecret, domain.SpotOrderCategory)
+	return c.TradeOpenOrders(ctx, apiKey, apiSecret, request.TradeOpenOrdersParam{Category: domain.SpotOrderCategory})
 }
 
 func (c *Client) TradeLinearOpenOrders(ctx context.Context, apiKey, apiSecret string) (response.TradeOpenOrdersResponse, error) {
-	return c.tradeOpenOrders(ctx, apiKey, apiSecret, domain.LinearOrderCategory)
+	return c.TradeOpenOrders(ctx, apiKey, apiSecret, request.TradeOpenOrdersParam{Category: domain.LinearOrderCategory})
 }
 
 func (c *Client) TradeInverseOpenOrders(ctx context.Context, apiKey, apiSecret string) (response.TradeOpenOrdersResponse, error) {
-	return c.tradeOpenOrders(ctx, apiKey, apiSecret, domain.InverseOrderCategory)
+	return c.TradeOpenOrders(ctx, apiKey, apiSecret, request.TradeOpenOrdersParam{Category: domain.InverseOrderCategory})
 }
 
 func (c *Client) TradeOptionOpenOrders(ctx context.Context, apiKey, apiSecret string) (response.TradeOpenOrdersResponse, error) {
-	return c.tradeOpenOrders(ctx, apiKey, apiSecret, domain.OptionOrderCategory)
+	return c.TradeOpenOrders(ctx, apiKey, apiSecret, request.TradeOpenOrdersParam{Category: domain.OptionOrderCategory})
 }
 
-func (c *Client) tradeOpenOrders(ctx context.Context, apiKey, apiSecret string, category domain.OrderCategory) (response.TradeOpenOrdersResponse, error) {
-	req, err := c.traderRequest.GetOpenOrders(ctx, apiKey, apiSecret, category)
+func (c *Client) TradeOpenOrders(ctx context.Context, apiKey, apiSecret string, param request.TradeOpenOrdersParam) (response.TradeOpenOrdersResponse, error) {
+	req, err := c.traderRequest.GetOpenOrders(ctx, apiKey, apiSecret, param)
 	if err != nil {
 		return response.TradeOpenOrdersResponse{}, err
 	}
 
-	resp, err := c.sender.Send(req)
-	if err != nil {
+	res := response.TradeOpenOrdersResponse{}
+	if err := c.sendRequest(req, &res); err != nil {
 		return response.TradeOpenOrdersResponse{}, err
 	}
-	defer func() { _ = resp.Body.Close() }()
-	result := response.TradeOpenOrdersResponse{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return response.TradeOpenOrdersResponse{}, err
-	}
-	return result, err
+	return res, err
 }
 
 func (c *Client) TradeSpotOrderHistory(
@@ -120,17 +115,11 @@ func (c *Client) TradeHistory(
 	if err != nil {
 		return response.TradeHistoryResponse{}, WrapErrCreateRequest(err)
 	}
-	resp, err := c.sender.Send(req)
-	if err != nil {
-		return response.TradeHistoryResponse{}, err
-	}
-
-	defer func() { _ = resp.Body.Close() }()
 	result := response.TradeHistoryResponse{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return response.TradeHistoryResponse{}, err
+	if err := c.sendRequest(req, &result); err != nil {
+		return response.TradeHistoryResponse{}, nil
 	}
-	return result, err
+	return result, nil
 }
 
 func (c *Client) TradePlaceOrder(
@@ -148,4 +137,18 @@ func (c *Client) TradePlaceOrder(
 	defer func() { _ = resp.Body.Close() }()
 	data, err := io.ReadAll(resp.Body)
 	return data, err
+}
+
+func (c *Client) TradeAmendOrder(
+	ctx context.Context, cred request.CredentialParam, param request.AmendOrderParam,
+) (response.TradeAmendOrderResponse, error) {
+	req, err := c.traderRequest.AmendOrder(ctx, cred, param)
+	if err != nil {
+		return response.TradeAmendOrderResponse{}, WrapErrCreateRequest(err)
+	}
+	result := response.TradeAmendOrderResponse{}
+	if err := c.sendRequest(req, &result); err != nil {
+		return response.TradeAmendOrderResponse{}, nil
+	}
+	return result, nil
 }

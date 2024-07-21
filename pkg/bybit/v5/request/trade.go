@@ -2,7 +2,6 @@ package request
 
 import (
 	"context"
-	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"net/http"
 	"net/url"
 )
@@ -16,14 +15,14 @@ func NewTrad(host *url.URL) *Trade {
 }
 
 func (r *Trade) GetOpenOrders(
-	ctx context.Context, apiKey, apiSecret string, category domain.OrderCategory,
+	ctx context.Context, apiKey, apiSecret string, param TradeOpenOrdersParam,
 ) (*http.Request, error) {
 	return personalRequest(
 		ctx,
 		Request{
 			Url:    r.host.JoinPath("/v5/order/realtime").String(),
 			Method: http.MethodGet,
-			Params: []Param{{Key: "category", Value: string(category)}},
+			Params: param.Params(),
 		},
 		apiKey,
 		apiSecret,
@@ -65,6 +64,19 @@ func (r *Trade) PlaceOrder(ctx context.Context, cred CredentialParam, param Plac
 		ctx,
 		Request{
 			Url:    r.host.JoinPath("/v5/order/create").String(),
+			Method: http.MethodPost,
+			Params: param.Params(),
+		},
+		cred.ApiKey,
+		cred.ApiSecret,
+	)
+}
+
+func (r *Trade) AmendOrder(ctx context.Context, cred CredentialParam, param AmendOrderParam) (*http.Request, error) {
+	return postPersonalRequest(
+		ctx,
+		Request{
+			Url:    r.host.JoinPath("/v5/order/amend").String(),
 			Method: http.MethodPost,
 			Params: param.Params(),
 		},

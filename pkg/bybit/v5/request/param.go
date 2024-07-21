@@ -85,6 +85,52 @@ func (p TradeOrderHistoryParam) Params() []Param {
 	return params
 }
 
+type TradeOpenOrdersParam struct {
+	Category    domain.OrderCategory
+	Symbol      string
+	BaseCoin    string
+	SettleCoin  string
+	OrderID     string
+	OrderLinkID string
+	OpenOnly    string
+	OrderFilter string
+	Limit       int
+	Cursor      string
+}
+
+func (p TradeOpenOrdersParam) Params() []Param {
+	var params []Param
+	params = append(params, Param{Key: "category", Value: string(p.Category)})
+	if p.Symbol != "" {
+		params = append(params, Param{Key: "symbol", Value: p.Symbol})
+	}
+	if p.BaseCoin != "" {
+		params = append(params, Param{Key: "baseCoin", Value: p.BaseCoin})
+	}
+	if p.SettleCoin != "" {
+		params = append(params, Param{Key: "settleCoin", Value: p.SettleCoin})
+	}
+	if p.OrderID != "" {
+		params = append(params, Param{Key: "orderId", Value: p.OrderID})
+	}
+	if p.OrderLinkID != "" {
+		params = append(params, Param{Key: "orderLinkId", Value: p.OrderLinkID})
+	}
+	if p.OpenOnly != "" {
+		params = append(params, Param{Key: "openOnly", Value: p.OpenOnly})
+	}
+	if p.OrderFilter != "" {
+		params = append(params, Param{Key: "orderFilter", Value: p.OrderFilter})
+	}
+	if p.Limit > 0 {
+		params = append(params, Param{Key: "limit", Value: strconv.Itoa(p.Limit)})
+	}
+	if p.Cursor != "" {
+		params = append(params, Param{Key: "cursor", Value: p.Cursor})
+	}
+	return params
+}
+
 type AssetWithdrawalRecordsParam struct {
 	WithdrawID   int
 	TxID         string
@@ -435,6 +481,81 @@ func (p MarketGetOrderBookParam) Params() []Param {
 	params = append(params, Param{Key: "category", Value: string(p.Category)})
 	if p.Limit > 0 {
 		params = append(params, Param{Key: "limit", Value: strconv.Itoa(p.Limit)})
+	}
+	return params
+}
+
+type AmendOrderParam struct {
+	Category     domain.OrderCategory
+	Symbol       string
+	OrderID      string
+	OrderLinkID  string
+	OrderIv      string
+	TriggerPrice string
+	Qty          float64
+	Price        float64
+	TpslMode     string
+	TakeProfit   string
+	StopLoss     string
+	TpTriggerBy  string
+	SlTriggerBy  string
+	TriggerBy    string
+	TpLimitPrice string
+	SlLimitPrice string
+}
+
+func (p AmendOrderParam) Params() []Param {
+	var params []Param
+	params = append(params, Param{Key: "category", Value: string(p.Category)})
+	params = append(params, Param{Key: "symbol", Value: p.Symbol})
+
+	if p.OrderID != "" {
+		params = append(params, Param{Key: "orderId", Value: p.OrderID})
+	}
+	if p.OrderLinkID != "" {
+		params = append(params, Param{Key: "orderLinkId", Value: p.OrderLinkID})
+	}
+	if p.OrderIv != "" {
+		params = append(params, Param{Key: "orderIv", Value: p.OrderIv})
+	}
+	if p.TriggerPrice != "" {
+		params = append(params, Param{Key: "triggerPrice", Value: p.TriggerPrice})
+	}
+	if p.Qty > 0 {
+		params = append(params, Param{Key: "qty", Value: strconv.FormatFloat(p.Qty, 'f', -1, 32)})
+	}
+	if p.Price > 0 {
+		params = append(params, Param{Key: "price", Value: strconv.FormatFloat(p.Price, 'f', -1, 32)})
+	}
+
+	if p.TpslMode != "" {
+		params = append(params, Param{Key: "tpslMode", Value: p.TpslMode})
+	}
+
+	if p.TakeProfit != "" {
+		params = append(params, Param{Key: "takeProfit", Value: p.TakeProfit})
+	}
+
+	if p.StopLoss != "" {
+		params = append(params, Param{Key: "stopLoss", Value: p.StopLoss})
+	}
+	if p.TpTriggerBy != "" {
+		params = append(params, Param{Key: "tpTriggerBy", Value: p.TpTriggerBy})
+	}
+
+	if p.SlTriggerBy != "" {
+		params = append(params, Param{Key: "slTriggerBy", Value: p.SlTriggerBy})
+	}
+
+	if p.TriggerBy != "" {
+		params = append(params, Param{Key: "triggerBy", Value: p.TriggerBy})
+	}
+
+	if p.TpLimitPrice != "" {
+		params = append(params, Param{Key: "tpLimitPrice", Value: p.TpLimitPrice})
+	}
+	if p.SlLimitPrice != "" {
+		params = append(params, Param{Key: "slLimitPrice", Value: p.SlLimitPrice})
 	}
 	return params
 }
