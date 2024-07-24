@@ -198,7 +198,7 @@ type OpenOrder struct {
 	MarketUnit         string           `json:"marketUnit"`
 	TriggerPrice       string           `json:"triggerPrice"`
 	TakeProfit         string           `json:"takeProfit"`
-	TpslMode           string           `json:"tpslMode"` //TP/SL mode, Spot does not have this field, and Option returns always ""
+	TpslMode           TpslMode         `json:"tpslMode"` //TP/SL mode, Spot does not have this field, and Option returns always ""
 	OcoTriggerType     string           `json:"ocoTriggerType"`
 	TpLimitPrice       string           `json:"tpLimitPrice"`
 	SlLimitPrice       string           `json:"slLimitPrice"`
