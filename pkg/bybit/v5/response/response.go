@@ -172,50 +172,50 @@ type TradeHistoryResponse struct {
 }
 
 type OpenOrder struct {
-	OrderLinkID        string `json:"orderLinkId"`
-	OrderID            string `json:"orderId"`
-	BlockTradeID       string `json:"blockTradeId"`
-	Symbol             string `json:"symbol"`
-	Price              string `json:"price"`
-	PositionIdx        int    `json:"positionIdx"`
-	Qty                string `json:"qty"`
-	Side               string `json:"side"`
-	IsLeverage         string `json:"isLeverage"`
-	OrderStatus        string `json:"orderStatus"`
-	CreateType         string `json:"createType"`
-	CancelType         string `json:"cancelType"`
-	RejectReason       string `json:"rejectReason"`
-	AvgPrice           string `json:"avgPrice"`
-	LeavesQty          string `json:"leavesQty"`
-	LeavesValue        string `json:"leavesValue"`
-	CumExecQty         string `json:"cumExecQty"`
-	CumExecValue       string `json:"cumExecValue"`
-	CumExecFee         string `json:"cumExecFee"`
-	TimeInForce        string `json:"timeInForce"`
-	OrderType          string `json:"orderType"`
-	StopOrderType      string `json:"stopOrderType"`
-	OrderIv            string `json:"orderIv"`
-	MarketUnit         string `json:"marketUnit"`
-	TriggerPrice       string `json:"triggerPrice"`
-	TakeProfit         string `json:"takeProfit"`
-	TpslMode           string `json:"tpslMode"`
-	OcoTriggerType     string `json:"ocoTriggerType"`
-	TpLimitPrice       string `json:"tpLimitPrice"`
-	SlLimitPrice       string `json:"slLimitPrice"`
-	StopLoss           string `json:"stopLoss"`
-	TpTriggerBy        string `json:"tpTriggerBy"`
-	SlTriggerBy        string `json:"slTriggerBy"`
-	TriggerDirection   int    `json:"triggerDirection"`
-	TriggerBy          string `json:"triggerBy"`
-	LastPriceOnCreated string `json:"lastPriceOnCreated"`
-	ReduceOnly         bool   `json:"reduceOnly"`
-	CloseOnTrigger     bool   `json:"closeOnTrigger"`
-	PlaceType          string `json:"placeType"`
-	CreatedTime        string `json:"createdTime"`
-	UpdatedTime        string `json:"updatedTime"`
-	SmpType            string `json:"smpType"`
-	SmpGroup           int    `json:"smpGroup"`
-	SmpOrderId         string `json:"smpOrderId"`
+	OrderLinkID        string           `json:"orderLinkId"`
+	OrderID            string           `json:"orderId"`
+	BlockTradeID       string           `json:"blockTradeId"`
+	Symbol             string           `json:"symbol"`
+	Price              string           `json:"price"`
+	PositionIdx        PositionIdx      `json:"positionIdx"`
+	Qty                string           `json:"qty"`
+	Side               Side             `json:"side"`
+	IsLeverage         string           `json:"isLeverage"`
+	OrderStatus        OrderStatus      `json:"orderStatus"`
+	CreateType         CreateType       `json:"createType"`
+	CancelType         CancelType       `json:"cancelType"`
+	RejectReason       RejectReason     `json:"rejectReason"`
+	AvgPrice           string           `json:"avgPrice"`
+	LeavesQty          string           `json:"leavesQty"`
+	LeavesValue        string           `json:"leavesValue"`
+	CumExecQty         string           `json:"cumExecQty"`
+	CumExecValue       string           `json:"cumExecValue"`
+	CumExecFee         string           `json:"cumExecFee"`
+	TimeInForce        TimeInForce      `json:"timeInForce"`
+	OrderType          OrderType        `json:"orderType"` //	Order type. Market,Limit. For TP/SL order, it means the order type after triggered
+	StopOrderType      StopOrderType    `json:"stopOrderType"`
+	OrderIv            string           `json:"orderIv"`
+	MarketUnit         string           `json:"marketUnit"`
+	TriggerPrice       string           `json:"triggerPrice"`
+	TakeProfit         string           `json:"takeProfit"`
+	TpslMode           string           `json:"tpslMode"` //TP/SL mode, Spot does not have this field, and Option returns always ""
+	OcoTriggerType     string           `json:"ocoTriggerType"`
+	TpLimitPrice       string           `json:"tpLimitPrice"`
+	SlLimitPrice       string           `json:"slLimitPrice"`
+	StopLoss           string           `json:"stopLoss"`
+	TpTriggerBy        string           `json:"tpTriggerBy"`
+	SlTriggerBy        string           `json:"slTriggerBy"`
+	TriggerDirection   TriggerDirection `json:"triggerDirection"`
+	TriggerBy          TriggerBy        `json:"triggerBy"`
+	LastPriceOnCreated string           `json:"lastPriceOnCreated"` //Last price when place the order
+	ReduceOnly         bool             `json:"reduceOnly"`
+	CloseOnTrigger     bool             `json:"closeOnTrigger"` // Close On Trigger function seeks to execute as a closing order that guarantees its execution regardless of margin requirements.
+	PlaceType          string           `json:"placeType"`
+	CreatedTime        string           `json:"createdTime"` //Order created timestamp (ms)
+	UpdatedTime        string           `json:"updatedTime"` //Order updated timestamp (ms)
+	SmpType            SmpType          `json:"smpType"`
+	SmpGroup           int              `json:"smpGroup"`
+	SmpOrderId         string           `json:"smpOrderId"`
 }
 
 type TradeOpenOrders struct {
