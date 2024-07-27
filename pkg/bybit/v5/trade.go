@@ -148,7 +148,7 @@ func (c *Client) TradeAmendOrder(
 	}
 	result := response.TradeAmendOrderResponse{}
 	if err := c.sendRequest(req, &result); err != nil {
-		return response.TradeAmendOrderResponse{}, nil
+		return response.TradeAmendOrderResponse{}, err
 	}
 	return result, nil
 }
