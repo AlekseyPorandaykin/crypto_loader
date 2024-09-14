@@ -56,7 +56,7 @@ func (c *ByBit) CreateFutureOrder(cred domain.ExchangeCredential, order domain.F
 }
 
 func (c *ByBit) LoadSymbolInfo(ctx context.Context) ([]domain.SymbolInfo, error) {
-	instrumentInfo, err := c.client.MarketInstrumentsInfo(ctx)
+	instrumentInfo, err := c.client.MarketInstrumentsSpotInfo(ctx)
 	if err != nil {
 		return nil, err
 	}

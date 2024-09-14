@@ -60,8 +60,47 @@ func (c *Client) MarketOptionTicker(ctx context.Context) (TickerResponse, error)
 	return result, nil
 }
 
-func (c *Client) MarketInstrumentsInfo(ctx context.Context) (response.InstrumentsInfoResponse, error) {
+func (c *Client) MarketInstrumentsSpotInfo(ctx context.Context) (response.InstrumentsInfoResponse, error) {
 	req, err := c.marketRequest.GetInstrumentsInfo(ctx, domain.SpotOrderCategory)
+	if err != nil {
+		return response.InstrumentsInfoResponse{}, WrapErrCreateRequest(err)
+	}
+	result := response.InstrumentsInfoResponse{}
+	if err := c.sendRequest(req, &result); err != nil {
+		return response.InstrumentsInfoResponse{}, err
+	}
+
+	return result, nil
+}
+
+func (c *Client) MarketInstrumentsLinearInfo(ctx context.Context) (response.InstrumentsInfoResponse, error) {
+	req, err := c.marketRequest.GetInstrumentsInfo(ctx, domain.LinearOrderCategory)
+	if err != nil {
+		return response.InstrumentsInfoResponse{}, WrapErrCreateRequest(err)
+	}
+	result := response.InstrumentsInfoResponse{}
+	if err := c.sendRequest(req, &result); err != nil {
+		return response.InstrumentsInfoResponse{}, err
+	}
+
+	return result, nil
+}
+
+func (c *Client) MarketInstrumentsInverseInfo(ctx context.Context) (response.InstrumentsInfoResponse, error) {
+	req, err := c.marketRequest.GetInstrumentsInfo(ctx, domain.InverseOrderCategory)
+	if err != nil {
+		return response.InstrumentsInfoResponse{}, WrapErrCreateRequest(err)
+	}
+	result := response.InstrumentsInfoResponse{}
+	if err := c.sendRequest(req, &result); err != nil {
+		return response.InstrumentsInfoResponse{}, err
+	}
+
+	return result, nil
+}
+
+func (c *Client) MarketInstrumentsOptionInfo(ctx context.Context) (response.InstrumentsInfoResponse, error) {
+	req, err := c.marketRequest.GetInstrumentsInfo(ctx, domain.OptionOrderCategory)
 	if err != nil {
 		return response.InstrumentsInfoResponse{}, WrapErrCreateRequest(err)
 	}
