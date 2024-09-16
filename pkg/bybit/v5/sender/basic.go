@@ -9,8 +9,12 @@ import (
 	"time"
 )
 
+type HTTPDoer interface {
+	Do(*http.Request) (*http.Response, error)
+}
+
 type Basic struct {
-	httpClient *http.Client
+	httpClient HTTPDoer
 	logger     *zap.Logger
 }
 
