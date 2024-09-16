@@ -22,7 +22,7 @@ func NewBasic() *Basic {
 	return &Basic{httpClient: http.DefaultClient, logger: zap.NewNop()}
 }
 
-func (s *Basic) WithHttpClient(httpClient *http.Client) {
+func (s *Basic) WithHttpClient(httpClient HTTPDoer) {
 	if httpClient == nil {
 		return
 	}
