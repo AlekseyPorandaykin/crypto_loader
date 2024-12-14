@@ -80,6 +80,7 @@ func (s *Basic) Send(req *http.Request) (*http.Response, error) {
 			zap.String("url", req.URL.String()),
 			zap.Int("status", resp.StatusCode),
 			zap.String("status_text", resp.Status))
+		time.Sleep(30 * time.Second)
 		return nil, fmt.Errorf("incorrect status code=%d (%s)", resp.StatusCode, resp.Status)
 	}
 
