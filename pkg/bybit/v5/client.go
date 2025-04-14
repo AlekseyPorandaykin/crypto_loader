@@ -7,6 +7,7 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/response"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/sender"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"net/http"
 	"net/url"
 )
@@ -25,6 +26,7 @@ func WrapErrHttpClientDo(err error) error {
 
 type Client struct {
 	sender sender.Sender
+	logger *zap.Logger
 
 	marketRequest  *request.Market
 	accountRequest *request.Account
@@ -51,6 +53,7 @@ func NewClient(host string, sender sender.Sender) (*Client, error) {
 		traderRequest:  request.NewTrad(urlHost),
 		positionReq:    request.NewPosition(urlHost),
 		sender:         sender,
+		logger:         zap.NewNop(),
 	}, nil
 }
 func (c *Client) WithSender(s sender.Sender) {
@@ -58,6 +61,12 @@ func (c *Client) WithSender(s sender.Sender) {
 		return
 	}
 	c.sender = s
+}
+func (c *Client) WithLogger(l *zap.Logger) {
+	if l == nil {
+		return
+	}
+	c.logger = l
 }
 
 // sendRequest - dest is pointer struct
@@ -75,6 +84,12 @@ func (c *Client) sendRequest(req *http.Request, dest any) error {
 	}
 
 	if checker, ok := dest.(response.CheckerResponse); ok && !checker.IsOk() {
+		c.logger.Error(
+			"error response from bybit",
+			zap.Any("response", dest),
+			zap.Any("headers", res.Header),
+			zap.Int("status_code", res.StatusCode),
+		)
 		return fmt.Errorf("err message (%s)", checker.ErrMessage())
 	}
 	return nil
