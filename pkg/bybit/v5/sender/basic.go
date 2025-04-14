@@ -6,8 +6,16 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 )
+
+// 600 запросов разрешено в 5 секундный интервал, но у некоторых запросов лимит маленький, и можно упереться в него раньше блокера.
+// Поэтому ставим лимит по самому крайнему ограничению = 5 запросов в секунду
+var intervalBetweenRequests = time.Second / 5
+
+var limitRequests = 10
+var criticalLimitRequests = 5
 
 type HTTPDoer interface {
 	Do(*http.Request) (*http.Response, error)
@@ -16,10 +24,13 @@ type HTTPDoer interface {
 type Basic struct {
 	httpClient HTTPDoer
 	logger     *zap.Logger
+
+	mu          sync.Mutex
+	lastExecute time.Time
 }
 
 func NewBasic() *Basic {
-	return &Basic{httpClient: http.DefaultClient, logger: zap.NewNop()}
+	return &Basic{httpClient: http.DefaultClient, logger: zap.NewNop(), lastExecute: time.Now()}
 }
 
 func (s *Basic) WithHttpClient(httpClient HTTPDoer) {
@@ -37,6 +48,7 @@ func (s *Basic) WithLogger(logger *zap.Logger) {
 }
 
 func (s *Basic) Send(req *http.Request) (*http.Response, error) {
+	s.wait()
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "error execute http request")
@@ -52,7 +64,7 @@ func (s *Basic) Send(req *http.Request) (*http.Response, error) {
 	now := time.Now().In(time.UTC)
 	if resp.StatusCode == http.StatusForbidden {
 		s.logger.Warn("status forbidden", zap.String("url", req.URL.String()))
-		time.Sleep(5 * time.Minute)
+		s.addWaitInterval(5 * time.Minute)
 		return nil, errors.New("status forbidden")
 	}
 	nextRequest := now.Add(1 * time.Minute)
@@ -63,16 +75,21 @@ func (s *Basic) Send(req *http.Request) (*http.Response, error) {
 		nextRequest = time.UnixMilli(int64(resetTimestamp)).In(time.UTC)
 	}
 	diff := nextRequest.Sub(now)
-	if limitStatus < 10 && limit != limitStatus && diff > 0 {
+	if limitStatus < limitRequests && limit != limitStatus && diff > 0 {
+		waitDuration := time.Duration(limitRequests-limitStatus) * diff
 		s.logger.Warn(
 			"many requests to bybit",
 			zap.String("url", req.URL.String()),
 			zap.Int("limitStatus", limitStatus),
 			zap.Int("limit", limit),
 			zap.Int("resetTimestamp", resetTimestamp),
-			zap.Duration("sleep", diff),
+			zap.Duration("diff", diff),
+			zap.Duration("wait", waitDuration),
 		)
-		time.Sleep(diff)
+		if limitStatus < criticalLimitRequests {
+			waitDuration = 30 * time.Second
+		}
+		s.addWaitInterval(waitDuration)
 	}
 	if resp.StatusCode != http.StatusOK {
 		s.logger.Error(
@@ -80,9 +97,27 @@ func (s *Basic) Send(req *http.Request) (*http.Response, error) {
 			zap.String("url", req.URL.String()),
 			zap.Int("status", resp.StatusCode),
 			zap.String("status_text", resp.Status))
-		time.Sleep(30 * time.Second)
+		s.addWaitInterval(30 * time.Second)
 		return nil, fmt.Errorf("incorrect status code=%d (%s)", resp.StatusCode, resp.Status)
 	}
 
 	return resp, nil
+}
+
+func (s *Basic) wait() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := time.Now()
+	dur := now.Sub(s.lastExecute)
+	if dur < intervalBetweenRequests {
+		time.Sleep(intervalBetweenRequests - dur)
+	}
+	s.lastExecute = time.Now()
+}
+
+func (s *Basic) addWaitInterval(dur time.Duration) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	time.Sleep(dur)
+	s.lastExecute = time.Now()
 }
