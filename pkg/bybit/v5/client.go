@@ -84,12 +84,15 @@ func (c *Client) sendRequest(req *http.Request, dest any) error {
 	}
 
 	if checker, ok := dest.(response.CheckerResponse); ok && !checker.IsOk() {
-		c.logger.Error(
-			"error response from bybit",
+		fields := []zap.Field{
 			zap.Any("response", dest),
 			zap.Any("headers", res.Header),
 			zap.Int("status_code", res.StatusCode),
-		)
+		}
+		if req.URL != nil {
+			fields = append(fields, zap.String("url", req.URL.String()))
+		}
+		c.logger.Error("error response from bybit", fields...)
 		return fmt.Errorf("err message (%s)", checker.ErrMessage())
 	}
 	return nil
