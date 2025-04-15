@@ -21,6 +21,7 @@ type HTTPDoer interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
+// Basic - проверяет лимиты по заголовкам и ждет, если лимит превышен. Ничего не знаем про тело ответа.
 type Basic struct {
 	httpClient HTTPDoer
 	logger     *zap.Logger
@@ -67,12 +68,14 @@ func (s *Basic) Send(req *http.Request) (*http.Response, error) {
 	)
 	if resp.StatusCode == http.StatusForbidden {
 		s.logger.Warn("status forbidden", zap.String("url", req.URL.String()))
-		s.addWaitInterval(5 * time.Minute)
+		s.addWaitInterval(11 * time.Minute)
 		return nil, errors.New("status forbidden")
 	}
-	limitStatus, _ := strconv.Atoi(resp.Header.Get("X-Bapi-Limit-Status")) //your remaining requests for current endpoint
-	limit, _ := strconv.Atoi(resp.Header.Get("X-Bapi-Limit"))              //your current limit for current endpoint
-	if limitStatus < limitRequests {
+	limitStatusStr := resp.Header.Get("X-Bapi-Limit-Status")
+	limitStr := resp.Header.Get("X-Bapi-Limit")
+	limitStatus, _ := strconv.Atoi(limitStatusStr) //your remaining requests for current endpoint
+	limit, _ := strconv.Atoi(limitStr)             //your current limit for current endpoint
+	if limitStatus < limitRequests && limitStatusStr != "" {
 		now := time.Now().In(time.UTC)
 		nextRequest := now.Add(1 * time.Second)
 		resetTimestamp, _ := strconv.Atoi(resp.Header.Get("X-Bapi-Limit-Reset-Timestamp")) //the timestamp indicating when your request limit resets if you have exceeded your rate_limit. Otherwise, this is just the current timestamp.
@@ -97,6 +100,9 @@ func (s *Basic) Send(req *http.Request) (*http.Response, error) {
 			zap.Duration("wait", waitDuration),
 		)
 		s.addWaitInterval(waitDuration)
+	}
+	if limitStatusStr == "" {
+		s.addWaitInterval(1 * time.Second)
 	}
 	if resp.StatusCode != http.StatusOK {
 		s.logger.Error(
