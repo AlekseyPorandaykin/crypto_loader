@@ -12,7 +12,7 @@ import (
 
 // 600 запросов разрешено в 5 секундный интервал, но у некоторых запросов лимит маленький, и можно упереться в него раньше блокера.
 // Поэтому ставим лимит по самому крайнему ограничению = 5 запросов в секунду
-var intervalBetweenRequests = time.Second / 100
+var intervalBetweenRequests = time.Second / 10
 
 var limitRequests = 10
 var criticalLimitRequests = 5
@@ -81,8 +81,14 @@ func (s *Basic) Send(req *http.Request) (*http.Response, error) {
 		}
 		diff := nextRequest.Sub(now)
 		waitDuration := time.Duration(limitRequests-limitStatus) * diff
+		errorMessage := "allowed request to bybit limit is less than threshold"
+
+		if limitStatus < criticalLimitRequests {
+			errorMessage = "allowed request to bybit limit is less than critical threshold"
+			waitDuration = 30 * time.Second
+		}
 		s.logger.Warn(
-			"many requests to bybit",
+			errorMessage,
 			zap.String("url", req.URL.String()),
 			zap.Int("limitStatus", limitStatus),
 			zap.Int("limit", limit),
@@ -90,9 +96,6 @@ func (s *Basic) Send(req *http.Request) (*http.Response, error) {
 			zap.Duration("diff", diff),
 			zap.Duration("wait", waitDuration),
 		)
-		if limitStatus < criticalLimitRequests {
-			waitDuration = 30 * time.Second
-		}
 		s.addWaitInterval(waitDuration)
 	}
 	if resp.StatusCode != http.StatusOK {
@@ -125,6 +128,6 @@ func (s *Basic) wait() {
 func (s *Basic) addWaitInterval(dur time.Duration) {
 	s.muAllowedRequests.Lock()
 	defer s.muAllowedRequests.Unlock()
-	s.logger.Debug("add wait interval", zap.Duration("wait", dur))
+	s.logger.Debug("add wait interval", zap.String("wait", dur.String()))
 	s.allowedNextExecute = time.Now().Add(dur)
 }
