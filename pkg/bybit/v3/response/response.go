@@ -27,6 +27,9 @@ func (resp CommonResponse) ErrMessage() string {
 	}
 	return resp.Message
 }
+func (resp CommonResponse) StatusCode() int {
+	return resp.Code
+}
 
 type AssetWithdrawRecord struct {
 	Coin         string `json:"coin"`

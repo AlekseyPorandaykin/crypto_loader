@@ -9,6 +9,7 @@ import (
 type CheckerResponse interface {
 	IsOk() bool
 	ErrMessage() string
+	StatusCode() int
 }
 
 type CommonResponse struct {
@@ -23,11 +24,15 @@ type CommonResponse struct {
 func (resp CommonResponse) IsOk() bool {
 	return resp.Code == 0
 }
+
 func (resp CommonResponse) ErrMessage() string {
 	if strings.ToLower(resp.Message) == "success" || strings.ToLower(resp.Message) == "ok" {
 		return ""
 	}
 	return resp.Message
+}
+func (resp CommonResponse) StatusCode() int {
+	return resp.Code
 }
 
 type AccountAssets struct {

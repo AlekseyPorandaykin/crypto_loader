@@ -10,6 +10,8 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"net/url"
+	"sync"
+	"time"
 )
 
 var ErrCreateRequest = errors.New("error create request")
@@ -34,6 +36,9 @@ type Client struct {
 	userRequest    *request.User
 	traderRequest  *request.Trade
 	positionReq    *request.Position
+
+	muAllowedRequests  sync.Mutex
+	allowedNextExecute time.Time
 }
 
 func DefaultClient(host string) (*Client, error) {
@@ -46,14 +51,15 @@ func NewClient(host string, sender sender.Sender) (*Client, error) {
 		return nil, err
 	}
 	return &Client{
-		marketRequest:  request.NewMarket(urlHost),
-		accountRequest: request.NewAccount(urlHost),
-		assetRequest:   request.NewAsset(urlHost),
-		userRequest:    request.NewUser(urlHost),
-		traderRequest:  request.NewTrad(urlHost),
-		positionReq:    request.NewPosition(urlHost),
-		sender:         sender,
-		logger:         zap.NewNop(),
+		marketRequest:      request.NewMarket(urlHost),
+		accountRequest:     request.NewAccount(urlHost),
+		assetRequest:       request.NewAsset(urlHost),
+		userRequest:        request.NewUser(urlHost),
+		traderRequest:      request.NewTrad(urlHost),
+		positionReq:        request.NewPosition(urlHost),
+		sender:             sender,
+		logger:             zap.NewNop(),
+		allowedNextExecute: time.Now(),
 	}, nil
 }
 func (c *Client) WithSender(s sender.Sender) {
@@ -71,6 +77,7 @@ func (c *Client) WithLogger(l *zap.Logger) {
 
 // sendRequest - dest is pointer struct
 func (c *Client) sendRequest(req *http.Request, dest any) error {
+	c.wait()
 	res, err := c.sender.Send(req)
 	if err != nil {
 		return WrapErrHttpClientDo(err)
@@ -92,8 +99,27 @@ func (c *Client) sendRequest(req *http.Request, dest any) error {
 		if req.URL != nil {
 			fields = append(fields, zap.String("url", req.URL.String()))
 		}
+		if checker.StatusCode() == response.TooManyVisitsCode {
+			c.addWaitInterval(1 * time.Minute)
+		}
 		c.logger.Error("error response from bybit", fields...)
 		return fmt.Errorf("err message (%s)", checker.ErrMessage())
 	}
 	return nil
+}
+
+func (c *Client) wait() {
+	c.muAllowedRequests.Lock()
+	defer c.muAllowedRequests.Unlock()
+	diff := c.allowedNextExecute.Sub(time.Now())
+	if diff > 0 {
+		time.Sleep(diff)
+	}
+	c.allowedNextExecute = time.Now()
+}
+
+func (c *Client) addWaitInterval(dur time.Duration) {
+	c.muAllowedRequests.Lock()
+	defer c.muAllowedRequests.Unlock()
+	c.allowedNextExecute = time.Now().Add(dur)
 }
