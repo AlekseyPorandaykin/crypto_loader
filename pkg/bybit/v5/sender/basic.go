@@ -98,6 +98,7 @@ func (s *Basic) Send(req *http.Request) (*http.Response, error) {
 			zap.Int("resetTimestamp", resetTimestamp),
 			zap.Duration("diff", diff),
 			zap.Duration("wait", waitDuration),
+			zap.Any("headers", resp.Header),
 		)
 		s.addWaitInterval(waitDuration)
 	}
