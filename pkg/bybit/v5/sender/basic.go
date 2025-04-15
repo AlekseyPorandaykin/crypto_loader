@@ -72,9 +72,7 @@ func (s *Basic) Send(req *http.Request) (*http.Response, error) {
 		return nil, errors.New("status forbidden")
 	}
 	limitStatusStr := resp.Header.Get("X-Bapi-Limit-Status")
-	limitStr := resp.Header.Get("X-Bapi-Limit")
 	limitStatus, _ := strconv.Atoi(limitStatusStr) //your remaining requests for current endpoint
-	limit, _ := strconv.Atoi(limitStr)             //your current limit for current endpoint
 	if limitStatus < limitRequests && limitStatusStr != "" {
 		now := time.Now().In(time.UTC)
 		nextRequest := now.Add(1 * time.Second)
@@ -94,10 +92,10 @@ func (s *Basic) Send(req *http.Request) (*http.Response, error) {
 			errorMessage,
 			zap.String("url", req.URL.String()),
 			zap.Int("limitStatus", limitStatus),
-			zap.Int("limit", limit),
+			zap.String("limit", resp.Header.Get("X-Bapi-Limit")), //your current limit for current endpoint
 			zap.Int("resetTimestamp", resetTimestamp),
-			zap.Duration("diff", diff),
-			zap.Duration("wait", waitDuration),
+			zap.String("diff", diff.String()),
+			zap.String("wait", waitDuration.String()),
 			zap.Any("headers", resp.Header),
 		)
 		s.addWaitInterval(waitDuration)
