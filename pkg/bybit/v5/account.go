@@ -9,6 +9,9 @@ import (
 )
 
 func (c *Client) AccountWalletBalance(ctx context.Context, apiKey, apiSecret string, account domain.AccountType) (response.AccountWalletBalanceResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.accountRequest.GetWalletBalance(ctx, apiKey, apiSecret, account)
 	if err != nil {
 		return response.AccountWalletBalanceResponse{}, WrapErrCreateRequest(err)
@@ -24,6 +27,9 @@ func (c *Client) AccountWalletBalance(ctx context.Context, apiKey, apiSecret str
 func (c *Client) AccountTransactionLog(
 	ctx context.Context, cred request.CredentialParam, param request.AccountTransactionLogParam,
 ) (response.TransactionLogsResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.accountRequest.GetTransactionLog(ctx, cred, param)
 	if err != nil {
 		return response.TransactionLogsResponse{}, WrapErrCreateRequest(err)
@@ -39,6 +45,9 @@ func (c *Client) AccountTransactionLog(
 func (c *Client) AccountGetAccountInfo(
 	ctx context.Context, cred request.CredentialParam,
 ) (any, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.accountRequest.GetAccountInfo(ctx, cred.ApiKey, cred.ApiSecret)
 	if err != nil {
 		return nil, WrapErrCreateRequest(err)
@@ -47,8 +56,8 @@ func (c *Client) AccountGetAccountInfo(
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
+	defer resp.HttpResp.Body.Close()
+	data, err := io.ReadAll(resp.HttpResp.Body)
 
 	return data, err
 }

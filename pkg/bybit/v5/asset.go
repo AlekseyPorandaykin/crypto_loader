@@ -31,6 +31,9 @@ func (c *Client) UnifiedAssetInfo(ctx context.Context, apiKey, apiSecret string)
 }
 
 func (c *Client) assetInfo(ctx context.Context, apiKey, apiSecret string, accountType domain.AccountType) ([]response.AccountAssets, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	var result response.AssetResponse
 	req, err := c.assetRequest.GetAssetInfo(ctx, apiKey, apiSecret, accountType)
 	if err != nil {
@@ -63,6 +66,9 @@ func (c *Client) AssetFundCoinsBalance(
 func (c *Client) assetCoinsBalance(
 	ctx context.Context, apiKey, apiSecret string, accountType domain.AccountType,
 ) (response.CoinBalanceResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	var result response.CoinBalanceResponse
 	req, err := c.assetRequest.GetAllCoinsBalance(ctx, apiKey, apiSecret, accountType)
 	if err != nil {
@@ -75,6 +81,9 @@ func (c *Client) assetCoinsBalance(
 }
 
 func (c *Client) AssetCoinExchangeRecords(ctx context.Context, apiKey, apiSecret string) (any, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.assetRequest.GetCoinExchangeRecords(ctx, apiKey, apiSecret)
 	if err != nil {
 		return nil, WrapErrCreateRequest(err)
@@ -83,17 +92,20 @@ func (c *Client) AssetCoinExchangeRecords(ctx context.Context, apiKey, apiSecret
 	if err != nil {
 		return nil, WrapErrHttpClientDo(err)
 	}
-	if res.Body == nil {
+	if res.HttpResp.Body == nil {
 		return nil, errors.New("empty body response")
 	}
-	defer func() { _ = res.Body.Close() }()
-	data, err := io.ReadAll(res.Body)
+	defer func() { _ = res.HttpResp.Body.Close() }()
+	data, err := io.ReadAll(res.HttpResp.Body)
 
 	return data, err
 }
 func (c *Client) AssetInternalTransferRecords(
 	ctx context.Context, apiKey, apiSecret string,
 ) (response.InternalTransferRecordsResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.assetRequest.GetInternalTransferRecords(ctx, apiKey, apiSecret)
 	if err != nil {
 		return response.InternalTransferRecordsResponse{}, WrapErrCreateRequest(err)
@@ -108,6 +120,9 @@ func (c *Client) AssetInternalTransferRecords(
 func (c *Client) AssetWithdrawalRecords(
 	ctx context.Context, cred request.CredentialParam, param request.AssetWithdrawalRecordsParam,
 ) (response.WithdrawalRecordsResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.assetRequest.GetWithdrawalRecords(ctx, cred, param)
 	if err != nil {
 		return response.WithdrawalRecordsResponse{}, WrapErrCreateRequest(err)
@@ -120,6 +135,9 @@ func (c *Client) AssetWithdrawalRecords(
 	return result, nil
 }
 func (c *Client) AssetDepositRecords(ctx context.Context, cred request.CredentialParam, param request.GetDepositRecordParam) (CommonResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.assetRequest.GetDepositRecords(ctx, cred, param)
 	if err != nil {
 		return CommonResponse{}, WrapErrCreateRequest(err)
@@ -132,6 +150,9 @@ func (c *Client) AssetDepositRecords(ctx context.Context, cred request.Credentia
 }
 
 func (c *Client) AssetUniversalTransferRecords(ctx context.Context, apiKey, apiSecret string) (any, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.assetRequest.GetUniversalTransferRecords(ctx, apiKey, apiSecret)
 	if err != nil {
 		return nil, WrapErrCreateRequest(err)

@@ -26,6 +26,9 @@ func (c *Client) TradeOptionOpenOrders(ctx context.Context, apiKey, apiSecret st
 }
 
 func (c *Client) TradeOpenOrders(ctx context.Context, apiKey, apiSecret string, param request.TradeOpenOrdersParam) (response.TradeOpenOrdersResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.traderRequest.GetOpenOrders(ctx, apiKey, apiSecret, param)
 	if err != nil {
 		return response.TradeOpenOrdersResponse{}, err
@@ -65,6 +68,9 @@ func (c *Client) TradeOptionOrderHistory(
 func (c *Client) TradeOrderHistory(
 	ctx context.Context, cred request.CredentialParam, param request.TradeOrderHistoryParam,
 ) (response.TradeOrderHistoryResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.traderRequest.GetOrderHistory(ctx, cred, param)
 	if err != nil {
 		return response.TradeOrderHistoryResponse{}, err
@@ -74,9 +80,9 @@ func (c *Client) TradeOrderHistory(
 	if err != nil {
 		return response.TradeOrderHistoryResponse{}, err
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer func() { _ = resp.HttpResp.Body.Close() }()
 	result := response.TradeOrderHistoryResponse{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(resp.HttpResp.Body).Decode(&result); err != nil {
 		return response.TradeOrderHistoryResponse{}, err
 	}
 	return result, nil
@@ -85,7 +91,6 @@ func (c *Client) TradeOrderHistory(
 func (c *Client) TradeSpotHistory(
 	ctx context.Context, cred request.CredentialParam,
 ) (response.TradeHistoryResponse, error) {
-
 	return c.TradeHistory(ctx, cred, request.TradeHistoryParam{Category: domain.SpotOrderCategory})
 }
 
@@ -111,6 +116,9 @@ func (c *Client) TradeOptionHistory(
 func (c *Client) TradeHistory(
 	ctx context.Context, cred request.CredentialParam, param request.TradeHistoryParam,
 ) (response.TradeHistoryResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.traderRequest.GetTradeHistory(ctx, cred, param)
 	if err != nil {
 		return response.TradeHistoryResponse{}, WrapErrCreateRequest(err)
@@ -125,6 +133,9 @@ func (c *Client) TradeHistory(
 func (c *Client) TradePlaceOrder(
 	ctx context.Context, cred request.CredentialParam, param request.PlaceOrderParam,
 ) (any, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.traderRequest.PlaceOrder(ctx, cred, param)
 	if err != nil {
 		return response.TradeHistoryResponse{}, WrapErrCreateRequest(err)
@@ -134,14 +145,17 @@ func (c *Client) TradePlaceOrder(
 		return response.TradeHistoryResponse{}, err
 	}
 
-	defer func() { _ = resp.Body.Close() }()
-	data, err := io.ReadAll(resp.Body)
+	defer func() { _ = resp.HttpResp.Body.Close() }()
+	data, err := io.ReadAll(resp.HttpResp.Body)
 	return data, err
 }
 
 func (c *Client) TradeAmendOrder(
 	ctx context.Context, cred request.CredentialParam, param request.AmendOrderParam,
 ) (response.TradeAmendOrderResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.traderRequest.AmendOrder(ctx, cred, param)
 	if err != nil {
 		return response.TradeAmendOrderResponse{}, WrapErrCreateRequest(err)

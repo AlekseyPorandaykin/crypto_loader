@@ -26,6 +26,8 @@ func WrapErrHttpClientDo(err error) error {
 	return errors.Wrap(err, ErrCreateRequest.Error())
 }
 
+const durationWaitManyVisits = 1 * time.Minute
+
 type Client struct {
 	sender sender.Sender
 	logger *zap.Logger
@@ -37,8 +39,12 @@ type Client struct {
 	traderRequest  *request.Trade
 	positionReq    *request.Position
 
+	muExecRequests sync.Mutex
+
 	muAllowedRequests  sync.Mutex
 	allowedNextExecute time.Time
+
+	muCreateRequest sync.Mutex
 }
 
 func DefaultClient(host string) (*Client, error) {
@@ -75,40 +81,58 @@ func (c *Client) WithLogger(l *zap.Logger) {
 	c.logger = l
 }
 
+func (c *Client) SetPauseDuration(dur time.Duration) {
+	c.addWaitInterval(dur)
+	c.logger.Debug("set pause duration send requests", zap.String("duration", dur.String()))
+}
+
 // sendRequest - dest is pointer struct
 func (c *Client) sendRequest(req *http.Request, dest any) error {
-	c.wait()
+	c.executeTimeLimitRequestSafely()
+	c.muExecRequests.Lock()
+	defer c.muExecRequests.Unlock()
 	res, err := c.sender.Send(req)
 	if err != nil {
 		return WrapErrHttpClientDo(err)
 	}
-	if res.Body == nil {
+	if res.HttpResp.Body == nil {
 		return errors.New("empty body response")
 	}
-	defer func() { _ = res.Body.Close() }()
-	if err := json.NewDecoder(res.Body).Decode(dest); err != nil {
+	defer func() { _ = res.HttpResp.Body.Close() }()
+	fields := []zap.Field{
+		zap.Int("status_code", res.HttpResp.StatusCode),
+		zap.Any("wait_duration", res.WaitDuration.String()),
+		zap.Any("actions", res.Actions),
+	}
+	if req.URL != nil {
+		fields = append(fields, zap.String("url", req.URL.String()))
+	}
+	if err := json.NewDecoder(res.HttpResp.Body).Decode(dest); err != nil {
 		return errors.Wrap(err, "error decode response")
 	}
 
 	if checker, ok := dest.(response.CheckerResponse); ok && !checker.IsOk() {
-		fields := []zap.Field{
-			zap.Any("response", dest),
-			zap.Any("headers", res.Header),
-			zap.Int("status_code", res.StatusCode),
-		}
-		if req.URL != nil {
-			fields = append(fields, zap.String("url", req.URL.String()))
-		}
+		fields = append(fields, zap.Any("response", dest))
+		fields = append(fields, zap.Any("headers", res.HttpResp.Header))
+		res.AddAction("Error response from bybit", checker.ErrMessage())
 		if checker.StatusCode() == response.TooManyVisitsCode {
-			c.addWaitInterval(1 * time.Minute)
+			res.AddActionWithWait("Too many visits", "", durationWaitManyVisits)
 		}
 		c.logger.Error("error response from bybit", fields...)
+		c.addWaitInterval(res.WaitDuration)
 		return fmt.Errorf("err message (%s)", checker.ErrMessage())
 	}
+	c.logger.Debug("success response from bybit", fields...)
+	c.addWaitInterval(res.WaitDuration)
 	return nil
 }
 
-func (c *Client) wait() {
+// createRequestSafely - проверки перед созданием запроса
+func (c *Client) createRequestSafely() {
+	c.executeTimeLimitRequestSafely()
+}
+
+func (c *Client) executeTimeLimitRequestSafely() {
 	c.muAllowedRequests.Lock()
 	defer c.muAllowedRequests.Unlock()
 	diff := c.allowedNextExecute.Sub(time.Now())

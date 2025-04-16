@@ -9,6 +9,9 @@ import (
 )
 
 func (c *Client) MarketSpotTicker(ctx context.Context) (TickerResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	result := TickerResponse{}
 	req, err := c.marketRequest.GetTickers(ctx, domain.SpotOrderCategory)
 	if err != nil {
@@ -22,6 +25,9 @@ func (c *Client) MarketSpotTicker(ctx context.Context) (TickerResponse, error) {
 }
 
 func (c *Client) MarketLinearTicker(ctx context.Context) (TickerResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	result := TickerResponse{}
 	req, err := c.marketRequest.GetTickers(ctx, domain.LinearOrderCategory)
 	if err != nil {
@@ -35,6 +41,9 @@ func (c *Client) MarketLinearTicker(ctx context.Context) (TickerResponse, error)
 }
 
 func (c *Client) MarketInverseTicker(ctx context.Context) (TickerResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	result := TickerResponse{}
 	req, err := c.marketRequest.GetTickers(ctx, domain.InverseOrderCategory)
 	if err != nil {
@@ -48,6 +57,9 @@ func (c *Client) MarketInverseTicker(ctx context.Context) (TickerResponse, error
 }
 
 func (c *Client) MarketOptionTicker(ctx context.Context) (TickerResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	result := TickerResponse{}
 	req, err := c.marketRequest.GetTickers(ctx, domain.OptionOrderCategory)
 	if err != nil {
@@ -61,6 +73,9 @@ func (c *Client) MarketOptionTicker(ctx context.Context) (TickerResponse, error)
 }
 
 func (c *Client) MarketInstrumentsSpotInfo(ctx context.Context) (response.InstrumentsInfoResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.marketRequest.GetInstrumentsInfo(ctx, domain.SpotOrderCategory)
 	if err != nil {
 		return response.InstrumentsInfoResponse{}, WrapErrCreateRequest(err)
@@ -74,6 +89,9 @@ func (c *Client) MarketInstrumentsSpotInfo(ctx context.Context) (response.Instru
 }
 
 func (c *Client) MarketInstrumentsLinearInfo(ctx context.Context) (response.InstrumentsInfoResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.marketRequest.GetInstrumentsInfo(ctx, domain.LinearOrderCategory)
 	if err != nil {
 		return response.InstrumentsInfoResponse{}, WrapErrCreateRequest(err)
@@ -87,6 +105,9 @@ func (c *Client) MarketInstrumentsLinearInfo(ctx context.Context) (response.Inst
 }
 
 func (c *Client) MarketInstrumentsInverseInfo(ctx context.Context) (response.InstrumentsInfoResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.marketRequest.GetInstrumentsInfo(ctx, domain.InverseOrderCategory)
 	if err != nil {
 		return response.InstrumentsInfoResponse{}, WrapErrCreateRequest(err)
@@ -100,6 +121,9 @@ func (c *Client) MarketInstrumentsInverseInfo(ctx context.Context) (response.Ins
 }
 
 func (c *Client) MarketInstrumentsOptionInfo(ctx context.Context) (response.InstrumentsInfoResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.marketRequest.GetInstrumentsInfo(ctx, domain.OptionOrderCategory)
 	if err != nil {
 		return response.InstrumentsInfoResponse{}, WrapErrCreateRequest(err)
@@ -148,6 +172,9 @@ func (c *Client) MarketGetLinearKlineMinute(ctx context.Context, symbol string, 
 }
 
 func (c *Client) MarketGetKline(ctx context.Context, param request.MarketGetKlineParam) (response.GetKlineResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.marketRequest.GetKline(ctx, param)
 	if err != nil {
 		return response.GetKlineResponse{}, WrapErrCreateRequest(err)
@@ -160,6 +187,9 @@ func (c *Client) MarketGetKline(ctx context.Context, param request.MarketGetKlin
 }
 
 func (c *Client) MarketGetOrderBook(ctx context.Context, param request.MarketGetOrderBookParam) (response.GetOrderBookResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.marketRequest.GetOrderBook(ctx, param)
 	if err != nil {
 		return response.GetOrderBookResponse{}, WrapErrCreateRequest(err)

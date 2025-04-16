@@ -9,6 +9,9 @@ import (
 )
 
 func (c *Client) PositionInfo(ctx context.Context, cred request.CredentialParam, param request.PositionInfoParam) (response.PositionInfoResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.positionReq.GetPositionInfo(ctx, cred, param)
 	if err != nil {
 		return response.PositionInfoResponse{}, WrapErrCreateRequest(err)
@@ -21,6 +24,9 @@ func (c *Client) PositionInfo(ctx context.Context, cred request.CredentialParam,
 	return result, err
 }
 func (c *Client) PositionMoveHistory(ctx context.Context, cred request.CredentialParam, param request.MovePositionHistoryParam) ([]byte, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.positionReq.GetMovePositionHistory(ctx, cred, param)
 	if err != nil {
 		return nil, WrapErrCreateRequest(err)
@@ -29,16 +35,19 @@ func (c *Client) PositionMoveHistory(ctx context.Context, cred request.Credentia
 	if err != nil {
 		return nil, WrapErrHttpClientDo(err)
 	}
-	if res.Body == nil {
+	if res.HttpResp.Body == nil {
 		return nil, errors.New("empty body response")
 	}
-	defer func() { _ = res.Body.Close() }()
-	data, err := io.ReadAll(res.Body)
+	defer func() { _ = res.HttpResp.Body.Close() }()
+	data, err := io.ReadAll(res.HttpResp.Body)
 
 	return data, err
 }
 
 func (c *Client) PositionClosedPnL(ctx context.Context, cred request.CredentialParam, param request.ClosedPnlParam) (response.ClosedPnlResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
 	req, err := c.positionReq.GetClosedPnL(ctx, cred, param)
 	if err != nil {
 		return response.ClosedPnlResponse{}, WrapErrCreateRequest(err)
