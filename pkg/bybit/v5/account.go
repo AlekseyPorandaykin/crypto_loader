@@ -5,7 +5,6 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/request"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/response"
-	"io"
 )
 
 func (c *Client) AccountWalletBalance(ctx context.Context, apiKey, apiSecret string, account domain.AccountType) (response.AccountWalletBalanceResponse, error) {
@@ -52,12 +51,9 @@ func (c *Client) AccountGetAccountInfo(
 	if err != nil {
 		return nil, WrapErrCreateRequest(err)
 	}
-	resp, err := c.sender.Send(req)
-	if err != nil {
+	result := make(map[string]any)
+	if err := c.sendRequest(req, &result); err != nil {
 		return nil, err
 	}
-	defer resp.HttpResp.Body.Close()
-	data, err := io.ReadAll(resp.HttpResp.Body)
-
-	return data, err
+	return result, nil
 }

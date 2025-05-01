@@ -5,8 +5,6 @@ import (
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/request"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/response"
-	"github.com/pkg/errors"
-	"io"
 	"strings"
 )
 
@@ -88,17 +86,11 @@ func (c *Client) AssetCoinExchangeRecords(ctx context.Context, apiKey, apiSecret
 	if err != nil {
 		return nil, WrapErrCreateRequest(err)
 	}
-	res, err := c.sender.Send(req)
-	if err != nil {
-		return nil, WrapErrHttpClientDo(err)
+	result := make(map[string]any)
+	if err := c.sendRequest(req, &result); err != nil {
+		return nil, err
 	}
-	if res.HttpResp.Body == nil {
-		return nil, errors.New("empty body response")
-	}
-	defer func() { _ = res.HttpResp.Body.Close() }()
-	data, err := io.ReadAll(res.HttpResp.Body)
-
-	return data, err
+	return result, nil
 }
 func (c *Client) AssetInternalTransferRecords(
 	ctx context.Context, apiKey, apiSecret string,

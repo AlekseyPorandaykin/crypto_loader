@@ -14,7 +14,10 @@ import (
 	"time"
 )
 
-var ErrCreateRequest = errors.New("error create request")
+var (
+	ErrCreateRequest = errors.New("error create request")
+	ErrApiKeyExpired = errors.New("api key expired")
+)
 
 func WrapErrCreateRequest(err error) error {
 	return errors.Wrap(err, ErrCreateRequest.Error())
@@ -120,6 +123,10 @@ func (c *Client) sendRequest(req *http.Request, dest any) error {
 		}
 		c.logger.Error("error response from bybit", fields...)
 		c.addWaitInterval(res.WaitDuration)
+		if checker.StatusCode() == response.ApiKeyHasExpired {
+			res.AddAction("(Derivatives) Your api key has expired", "")
+			return ErrApiKeyExpired
+		}
 		return fmt.Errorf("err message (%s)", checker.ErrMessage())
 	}
 	c.logger.Debug("success response from bybit", fields...)

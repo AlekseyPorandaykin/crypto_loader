@@ -2,11 +2,9 @@ package v5
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/request"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/response"
-	"io"
 )
 
 func (c *Client) TradeSpotOpenOrders(ctx context.Context, apiKey, apiSecret string) (response.TradeOpenOrdersResponse, error) {
@@ -76,13 +74,8 @@ func (c *Client) TradeOrderHistory(
 		return response.TradeOrderHistoryResponse{}, err
 	}
 
-	resp, err := c.sender.Send(req)
-	if err != nil {
-		return response.TradeOrderHistoryResponse{}, err
-	}
-	defer func() { _ = resp.HttpResp.Body.Close() }()
 	result := response.TradeOrderHistoryResponse{}
-	if err := json.NewDecoder(resp.HttpResp.Body).Decode(&result); err != nil {
+	if err := c.sendRequest(req, &result); err != nil {
 		return response.TradeOrderHistoryResponse{}, err
 	}
 	return result, nil
@@ -140,14 +133,11 @@ func (c *Client) TradePlaceOrder(
 	if err != nil {
 		return response.TradeHistoryResponse{}, WrapErrCreateRequest(err)
 	}
-	resp, err := c.sender.Send(req)
-	if err != nil {
-		return response.TradeHistoryResponse{}, err
+	result := make(map[string]any)
+	if err := c.sendRequest(req, &result); err != nil {
+		return nil, err
 	}
-
-	defer func() { _ = resp.HttpResp.Body.Close() }()
-	data, err := io.ReadAll(resp.HttpResp.Body)
-	return data, err
+	return result, nil
 }
 
 func (c *Client) TradeAmendOrder(
