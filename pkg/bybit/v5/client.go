@@ -102,34 +102,35 @@ func (c *Client) sendRequest(req *http.Request, dest any) error {
 		return errors.New("empty body response")
 	}
 	defer func() { _ = res.HttpResp.Body.Close() }()
-	fields := []zap.Field{
+	logger := c.logger.With(
 		zap.Int("status_code", res.HttpResp.StatusCode),
 		zap.Any("wait_duration", res.WaitDuration.String()),
-		zap.Any("actions", res.Actions),
-	}
+	)
 	if req.URL != nil {
-		fields = append(fields, zap.String("url", req.URL.String()))
+		logger = logger.With(zap.String("url", req.URL.String()))
 	}
 	if err := json.NewDecoder(res.HttpResp.Body).Decode(dest); err != nil {
 		return errors.Wrap(err, "error decode response")
 	}
 
 	if checker, ok := dest.(response.CheckerResponse); ok && !checker.IsOk() {
-		fields = append(fields, zap.Any("response", dest))
-		fields = append(fields, zap.Any("headers", res.HttpResp.Header))
+		logger = logger.With(zap.Any("response", dest))
+		logger = logger.With(zap.Any("headers", res.HttpResp.Header))
 		res.AddAction("Error response from bybit", checker.ErrMessage())
 		if checker.StatusCode() == response.TooManyVisitsCode {
 			res.AddActionWithWait("Too many visits", "", durationWaitManyVisits)
 		}
-		c.logger.Error("error response from bybit", fields...)
 		c.addWaitInterval(res.WaitDuration)
+		logger.With(zap.Any("actions", res.Actions))
+		logger.Error("error response from bybit")
 		if checker.StatusCode() == response.ApiKeyHasExpired {
 			res.AddAction("(Derivatives) Your api key has expired", "")
 			return ErrApiKeyExpired
 		}
 		return fmt.Errorf("err message (%s)", checker.ErrMessage())
 	}
-	c.logger.Debug("success response from bybit", fields...)
+	logger.With(zap.Any("actions", res.Actions))
+	logger.Debug("success response from bybit")
 	c.addWaitInterval(res.WaitDuration)
 	return nil
 }

@@ -9,7 +9,7 @@ import (
 // 600 запросов разрешено в 5 секундный интервал, но у некоторых запросов лимит маленький, и можно упереться в него раньше блокера.
 // Поэтому ставим лимит по самому крайнему ограничению = 5 запросов в секунду
 var (
-	intervalBetweenRequests = time.Second / 10
+	intervalBetweenRequests = time.Second / 5
 	intervalLongWait        = 11 * time.Minute
 	intervalMediumWait      = 30 * time.Second
 	intervalShortWait       = time.Second / 5
