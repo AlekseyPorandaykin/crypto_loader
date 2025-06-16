@@ -121,16 +121,15 @@ func (c *Client) sendRequest(req *http.Request, dest any) error {
 			res.AddActionWithWait("Too many visits", "", durationWaitManyVisits)
 		}
 		c.addWaitInterval(res.WaitDuration)
-		logger.With(zap.Any("actions", res.Actions))
-		logger.Error("error response from bybit")
 		if checker.StatusCode() == response.ApiKeyHasExpired {
 			res.AddAction("(Derivatives) Your api key has expired", "")
+			logger.Error("api key expired", zap.Any("actions", res.Actions))
 			return ErrApiKeyExpired
 		}
+		logger.Error("error response from bybit", zap.Any("actions", res.Actions))
 		return fmt.Errorf("err message (%s)", checker.ErrMessage())
 	}
-	logger.With(zap.Any("actions", res.Actions))
-	logger.Debug("success response from bybit")
+	logger.Debug("success response from bybit", zap.Any("actions", res.Actions))
 	c.addWaitInterval(res.WaitDuration)
 	return nil
 }
