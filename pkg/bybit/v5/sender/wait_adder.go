@@ -31,9 +31,9 @@ func (s *WaitAdder) Send(req *http.Request) (Response, error) {
 	if err != nil {
 		return resp, err
 	}
-	resp.AddActionWithWait("Add common interval between requests", intervalBetweenRequests.String(), intervalBetweenRequests)
+	resp.AddActionWithWait("Add common interval between requests", intervalBetweenRequests)
 	if resp.HttpResp.StatusCode == http.StatusForbidden {
-		resp.AddActionWithWait("Status 403 Forbidden, add wait interval", intervalLongWait.String(), intervalLongWait)
+		resp.AddActionWithWait("Status 403 Forbidden, add wait interval", intervalLongWait)
 		return resp, err
 	}
 	limitStatusStr := resp.HttpResp.Header.Get("X-Bapi-Limit-Status")
@@ -56,10 +56,10 @@ func (s *WaitAdder) Send(req *http.Request) (Response, error) {
 		if limitStatus < criticalLimitRequests {
 			waitDuration = intervalMediumWait
 		}
-		resp.AddActionWithWait("Limit less threshold, add wait interval", waitDuration.String(), waitDuration)
+		resp.AddActionWithWait("Limit less threshold, add wait interval", waitDuration)
 	}
 	if resp.HttpResp.StatusCode != http.StatusOK {
-		resp.AddActionWithWait("Status response not ok, add wait interval", intervalMediumWait.String(), intervalMediumWait)
+		resp.AddActionWithWait("Status response not ok, add wait interval", intervalMediumWait)
 		return resp, err
 	}
 	return resp, nil

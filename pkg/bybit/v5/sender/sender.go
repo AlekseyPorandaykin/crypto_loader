@@ -20,8 +20,8 @@ type Response struct {
 func (r *Response) AddAction(name, value string) {
 	r.Actions = append(r.Actions, Action{Name: name, Value: value, Timestamp: time.Now()})
 }
-func (r *Response) AddActionWithWait(name, value string, wait time.Duration) {
-	r.Actions = append(r.Actions, Action{Name: name, Value: value, Timestamp: time.Now()})
+func (r *Response) AddActionWithWait(name string, wait time.Duration) {
+	r.Actions = append(r.Actions, Action{Name: name, Value: wait.String(), Timestamp: time.Now()})
 	r.WaitDuration += wait
 }
 

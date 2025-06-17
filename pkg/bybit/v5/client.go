@@ -85,8 +85,10 @@ func (c *Client) WithLogger(l *zap.Logger) {
 }
 
 func (c *Client) SetPauseDuration(dur time.Duration) {
-	c.addWaitInterval(dur)
-	c.logger.Debug("set pause duration send requests", zap.String("duration", dur.String()))
+	c.logger.Debug("set pause duration send requests",
+		zap.String("duration", dur.String()),
+		zap.Time("nextExecute", c.addWaitInterval(dur)),
+	)
 }
 
 // sendRequest - dest is pointer struct
@@ -118,19 +120,25 @@ func (c *Client) sendRequest(req *http.Request, dest any) error {
 		logger = logger.With(zap.Any("headers", res.HttpResp.Header))
 		res.AddAction("Error response from bybit", checker.ErrMessage())
 		if checker.StatusCode() == response.TooManyVisitsCode {
-			res.AddActionWithWait("Too many visits", "", durationWaitManyVisits)
+			res.AddActionWithWait("Too many visits", durationWaitManyVisits)
 		}
-		c.addWaitInterval(res.WaitDuration)
 		if checker.StatusCode() == response.ApiKeyHasExpired {
 			res.AddAction("(Derivatives) Your api key has expired", "")
-			logger.Error("api key expired", zap.Any("actions", res.Actions))
+			logger.Error("api key expired",
+				zap.Any("actions", res.Actions),
+				zap.Time("nextExecute", c.addWaitInterval(res.WaitDuration)),
+			)
 			return ErrApiKeyExpired
 		}
-		logger.Error("error response from bybit", zap.Any("actions", res.Actions))
+		logger.Error("error response from bybit",
+			zap.Any("actions", res.Actions),
+			zap.Time("nextExecute", c.addWaitInterval(res.WaitDuration)))
 		return fmt.Errorf("err message (%s)", checker.ErrMessage())
 	}
-	logger.Debug("success response from bybit", zap.Any("actions", res.Actions))
-	c.addWaitInterval(res.WaitDuration)
+	logger.Debug("success response from bybit",
+		zap.Any("actions", res.Actions),
+		zap.Time("nextExecute", c.addWaitInterval(res.WaitDuration)),
+	)
 	return nil
 }
 
@@ -149,8 +157,9 @@ func (c *Client) executeTimeLimitRequestSafely() {
 	c.allowedNextExecute = time.Now()
 }
 
-func (c *Client) addWaitInterval(dur time.Duration) {
+func (c *Client) addWaitInterval(dur time.Duration) time.Time {
 	c.muAllowedRequests.Lock()
 	defer c.muAllowedRequests.Unlock()
 	c.allowedNextExecute = time.Now().Add(dur)
+	return c.allowedNextExecute
 }
