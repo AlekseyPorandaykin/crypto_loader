@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 type Asset struct {
@@ -24,11 +25,14 @@ func (r *Asset) GetAssetInfo(ctx context.Context, apiKey, apiSecret string, acco
 	}, apiKey, apiSecret)
 }
 
-func (r *Asset) GetAllCoinsBalance(ctx context.Context, apiKey, apiSecret string, accountType domain.AccountType) (*http.Request, error) {
+func (r *Asset) GetAllCoinsBalance(ctx context.Context, apiKey, apiSecret string, accountType domain.AccountType, coins []string) (*http.Request, error) {
 	return personalRequest(ctx, Request{
 		Url:    r.host.JoinPath("/v5/asset/transfer/query-account-coins-balance").String(),
 		Method: http.MethodGet,
-		Params: []Param{{Key: "accountType", Value: string(accountType)}},
+		Params: []Param{
+			{Key: "accountType", Value: string(accountType)},
+			{Key: "coin", Value: strings.Join(coins, ",")},
+		},
 	}, apiKey, apiSecret)
 }
 func (r *Asset) GetCoinExchangeRecords(ctx context.Context, apiKey, apiSecret string) (*http.Request, error) {

@@ -17,20 +17,34 @@ func (r CommonResponse) IsOk() bool {
 	return r.Code == 0
 }
 
+// SymbolTick - Поля могут отличаться в зависимости от типа акаунта
 type SymbolTick struct {
-	Symbol        string `json:"symbol"`
-	Bid1Price     string `json:"bid1Price"`
-	Bid1Size      string `json:"bid1Size"`
-	Ask1Price     string `json:"ask1Price"`
-	Ask1Size      string `json:"ask1Size"`
-	LastPrice     string `json:"lastPrice"`
-	PrevPrice24h  string `json:"prevPrice24h"`
-	Price24hPcnt  string `json:"price24hPcnt"`
-	HighPrice24h  string `json:"highPrice24h"`
-	LowPrice24h   string `json:"lowPrice24h"`
-	Turnover24h   string `json:"turnover24h"`
-	Volume24h     string `json:"volume24h"`
-	UsdIndexPrice string `json:"usdIndexPrice"`
+	Symbol                 string `json:"symbol"`
+	LastPrice              string `json:"lastPrice"`              // Последняя торговая цена.
+	IndexPrice             string `json:"indexPrice"`             // Индексная цена.
+	MarkPrice              string `json:"markPrice"`              // Марк-цена. Используется для расчета P&L и ликвидации.
+	PrevPrice24H           string `json:"prevPrice24h"`           // Цена за 24 часа до текущего момента.
+	Price24HPcnt           string `json:"price24hPcnt"`           // Процентное изменение цены за 24 часа.
+	HighPrice24H           string `json:"highPrice24h"`           // Самая высокая цена за последние 24 часа.
+	LowPrice24H            string `json:"lowPrice24h"`            // Самая низкая цена за последние 24 часа.
+	PrevPrice1H            string `json:"prevPrice1h"`            // Цена за 1 часа до текущего момента.
+	OpenInterest           string `json:"openInterest"`           // Объем открытого интереса (общее количество открытых позиций) для этого символа.
+	OpenInterestValue      string `json:"openInterestValue"`      // Стоимость открытого интереса в базовой валюте.
+	Turnover24H            string `json:"turnover24h"`            // Общий объем торгов за 24 часа в базовой валюте (например, USD для BTCUSD, USDT для BTCUSDT).
+	Volume24H              string `json:"volume24h"`              // Общий объем торгов за 24 часа в контрактах или единицах актива.
+	FundingRate            string `json:"fundingRate"`            // Текущая ставка финансирования. Положительное значение означает, что лонги платят шортам; отрицательное — шорты платят лонгам.
+	NextFundingTime        string `json:"nextFundingTime"`        // Время следующего обмена финансированием в Unix timestamp (миллисекунды).
+	PredictedDeliveryPrice string `json:"predictedDeliveryPrice"` // Predicated delivery price. It has a value 30 mins before delivery.
+	BasisRate              string `json:"basisRate"`              // Базовая ставка
+	DeliveryFeeRate        string `json:"deliveryFeeRate"`        // Ставка комиссии за доставку (актуально для квартальных контрактов).
+	DeliveryTime           string `json:"deliveryTime"`           // Время доставки (актуально для квартальных контрактов) в Unix timestamp (миллисекунды).
+	Ask1Size               string `json:"ask1Size"`               // Размер лучшего спроса (количество базовой валюты для продажи).
+	Bid1Price              string `json:"bid1Price"`              // Лучшая цена предложения (цена покупки).
+	Ask1Price              string `json:"ask1Price"`              // Лучшая цена спроса (цена продажи).
+	Bid1Size               string `json:"bid1Size"`               // Размер лучшего предложения (количество базовой валюты для покупки).
+	Basis                  string `json:"basis"`                  //Basis
+	PreOpenPrice           string `json:"preOpenPrice"`           //
+	PreQty                 string `json:"preQty"`                 //
 }
 
 type TickerResult struct {

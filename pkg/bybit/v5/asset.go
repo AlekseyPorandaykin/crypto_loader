@@ -2,6 +2,7 @@ package v5
 
 import (
 	"context"
+	"errors"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/request"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/response"
@@ -46,29 +47,35 @@ func (c *Client) assetInfo(ctx context.Context, apiKey, apiSecret string, accoun
 func (c *Client) AssetContractCoinsBalance(
 	ctx context.Context, apiKey, apiSecret string,
 ) (response.CoinBalanceResponse, error) {
-	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.ContractAccountType)
+	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.ContractAccountType, nil)
 }
 
 func (c *Client) AssetUnifiedCoinsBalance(
-	ctx context.Context, apiKey, apiSecret string,
+	ctx context.Context, apiKey, apiSecret string, coins []string,
 ) (response.CoinBalanceResponse, error) {
-	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.UnifiedAccountType)
+	if len(coins) == 0 {
+		return response.CoinBalanceResponse{}, errors.New("coins required for unified account balance")
+	}
+	if len(coins) > 10 {
+		return response.CoinBalanceResponse{}, errors.New("maximum 10 coins can be requested for unified account balance")
+	}
+	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.UnifiedAccountType, coins)
 }
 
 func (c *Client) AssetFundCoinsBalance(
 	ctx context.Context, apiKey, apiSecret string,
 ) (response.CoinBalanceResponse, error) {
-	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.FundAccountType)
+	return c.assetCoinsBalance(ctx, apiKey, apiSecret, domain.FundAccountType, nil)
 }
 
 func (c *Client) assetCoinsBalance(
-	ctx context.Context, apiKey, apiSecret string, accountType domain.AccountType,
+	ctx context.Context, apiKey, apiSecret string, accountType domain.AccountType, coins []string,
 ) (response.CoinBalanceResponse, error) {
 	c.muCreateRequest.Lock()
 	defer c.muCreateRequest.Unlock()
 	c.createRequestSafely()
 	var result response.CoinBalanceResponse
-	req, err := c.assetRequest.GetAllCoinsBalance(ctx, apiKey, apiSecret, accountType)
+	req, err := c.assetRequest.GetAllCoinsBalance(ctx, apiKey, apiSecret, accountType, coins)
 	if err != nil {
 		return response.CoinBalanceResponse{}, WrapErrCreateRequest(err)
 	}
