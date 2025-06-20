@@ -634,3 +634,31 @@ type TradeAmendOrderResponse struct {
 	CommonResponse
 	Result TradeAmendOrder `json:"result"`
 }
+
+type CoinInfoRowChain struct {
+	ChainType             string `json:"chainType"`             // Тип цепочки
+	Confirmation          string `json:"confirmation"`          // Количество подтверждений для депозита: как только это количество будет достигнуто, ваши средства будут зачислены на счет и доступны для торговли.
+	WithdrawFee           string `json:"withdrawFee"`           // Комиссия за вывод средств. Если пусто, это означает, что монета не поддерживает вывод.
+	DepositMin            string `json:"depositMin"`            // Минимальная сумма депозита.
+	WithdrawMin           string `json:"withdrawMin"`           // Минимальная сумма вывода.
+	Chain                 string `json:"chain"`                 // Название цепочки/сети
+	ChainDeposit          string `json:"chainDeposit"`          // Статус депозита для данной цепочки: 0 (приостановлен), 1 (нормальный).
+	ChainWithdraw         string `json:"chainWithdraw"`         // Статус вывода для данной цепочки: 0 (приостановлен), 1 (нормальный).
+	MinAccuracy           string `json:"minAccuracy"`           // Точность (количество знаков после запятой) для вывода или депозита.
+	WithdrawPercentageFee string `json:"withdrawPercentageFee"` // Процентная комиссия за вывод. Это реальное число, например, 0.022 означает 2.2%.
+	ContractAddress       string `json:"contractAddress"`       // Адрес контракта токена на данной цепочке. "" означает отсутствие адреса контракта (для нативных монет).
+	SafeConfirmNumber     string `json:"safeConfirmNumber"`     // Количество подтверждений безопасности: как только это число будет достигнуто, ваши средства в эквиваленте USD будут полностью разблокированы и доступны для вывода.
+}
+type CoinInfoRow struct {
+	Name         string             `json:"name"`         // Полное имя монеты
+	Coin         string             `json:"coin"`         // Символ монеты
+	RemainAmount string             `json:"remainAmount"` // Максимальная сумма вывода за одну транзакцию.
+	Chains       []CoinInfoRowChain `json:"chains"`       // Массив объектов, содержащих информацию о различных цепочках (сетях), поддерживаемых для данной монеты.
+}
+
+type CoinInfoResponse struct {
+	CommonResponse
+	Result struct {
+		Rows []CoinInfoRow `json:"rows"`
+	} `json:"result"`
+}

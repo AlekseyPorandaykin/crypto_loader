@@ -25,6 +25,14 @@ func (r *Asset) GetAssetInfo(ctx context.Context, apiKey, apiSecret string, acco
 	}, apiKey, apiSecret)
 }
 
+func (r *Asset) GetCoinInfo(ctx context.Context, apiKey, apiSecret, coin string) (*http.Request, error) {
+	return personalRequest(ctx, Request{
+		Url:    r.host.JoinPath("/v5/asset/coin/query-info").String(),
+		Method: http.MethodGet,
+		Params: []Param{{Key: "coin", Value: coin}},
+	}, apiKey, apiSecret)
+}
+
 func (r *Asset) GetAllCoinsBalance(ctx context.Context, apiKey, apiSecret string, accountType domain.AccountType, coins []string) (*http.Request, error) {
 	return personalRequest(ctx, Request{
 		Url:    r.host.JoinPath("/v5/asset/transfer/query-account-coins-balance").String(),

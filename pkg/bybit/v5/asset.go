@@ -163,3 +163,34 @@ func (c *Client) AssetUniversalTransferRecords(ctx context.Context, apiKey, apiS
 
 	return result, nil
 }
+
+func (c *Client) AssetCoinInfo(ctx context.Context, apiKey, apiSecret, coin string) (response.CoinInfoResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
+	req, err := c.assetRequest.GetCoinInfo(ctx, apiKey, apiSecret, strings.ToUpper(coin))
+	if err != nil {
+		return response.CoinInfoResponse{}, WrapErrCreateRequest(err)
+	}
+	result := response.CoinInfoResponse{}
+	if err := c.sendRequest(req, &result); err != nil {
+		return response.CoinInfoResponse{}, err
+	}
+
+	return result, nil
+}
+func (c *Client) AssetCoinsInfo(ctx context.Context, apiKey, apiSecret string) (response.CoinInfoResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	c.createRequestSafely()
+	req, err := c.assetRequest.GetCoinInfo(ctx, apiKey, apiSecret, "")
+	if err != nil {
+		return response.CoinInfoResponse{}, WrapErrCreateRequest(err)
+	}
+	result := response.CoinInfoResponse{}
+	if err := c.sendRequest(req, &result); err != nil {
+		return response.CoinInfoResponse{}, err
+	}
+
+	return result, nil
+}
