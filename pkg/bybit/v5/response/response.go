@@ -313,26 +313,45 @@ type TransactionLogsResponse struct {
 }
 
 type InstrumentInfo struct {
-	Symbol        string `json:"symbol"`
-	BaseCoin      string `json:"baseCoin"`
-	QuoteCoin     string `json:"quoteCoin"`
-	Innovation    string `json:"innovation"`
-	Status        string `json:"status"`
-	MarginTrading string `json:"marginTrading"`
-	LotSizeFilter struct {
-		BasePrecision  string `json:"basePrecision"`
-		QuotePrecision string `json:"quotePrecision"`
-		MinOrderQty    string `json:"minOrderQty"`
-		MaxOrderQty    string `json:"maxOrderQty"`
-		MinOrderAmt    string `json:"minOrderAmt"`
-		MaxOrderAmt    string `json:"maxOrderAmt"`
-	} `json:"lotSizeFilter"`
+	Symbol             string      `json:"symbol"`          // Название торговой пары
+	ContractType       string      `json:"contractType"`    // Тип контракта (например, LinearPerpetual для USDT бессрочных, InversePerpetual для инверсных бессрочных, InverseFutures для инверсных фьючерсов).
+	Status             string      `json:"status"`          // Статус инструмента (например, Trading, PreLaunch, Settling, Delivering, Closed).
+	BaseCoin           string      `json:"baseCoin"`        // Базовая валюта (например, BTC).
+	QuoteCoin          string      `json:"quoteCoin"`       // Валюта котировки (например, USDT).
+	LaunchTime         string      `json:"launchTime"`      // Время запуска инструмента в Unix timestamp (мс).
+	DeliveryTime       string      `json:"deliveryTime"`    // Время доставки (для фьючерсов) или время делистинга (для бессрочных) в Unix timestamp (мс). 0 для бессрочных, если нет планов на делистинг.
+	DeliveryFeeRate    string      `json:"deliveryFeeRate"` // Ставка комиссии за доставку (для фьючерсов).
+	PriceScale         string      `json:"priceScale"`      // Масштаб цены, количество знаков после запятой для цены.
+	UnifiedMarginTrade bool        `json:"unifiedMarginTrade"`
+	FundingInterval    int         `json:"fundingInterval"`
+	SettleCoin         string      `json:"settleCoin"`
+	CopyTrading        string      `json:"copyTrading"`
+	UpperFundingRate   string      `json:"upperFundingRate"`
+	LowerFundingRate   string      `json:"lowerFundingRate"`
+	IsPreListing       bool        `json:"isPreListing"`
+	PreListingInfo     interface{} `json:"preListingInfo"`
+	DisplayName        string      `json:"displayName"`
+	LeverageFilter     struct {
+		MinLeverage  string `json:"minLeverage"`  // Минимальное кредитное плечо.
+		MaxLeverage  string `json:"maxLeverage"`  // Максимальное кредитное плечо.
+		LeverageStep string `json:"leverageStep"` // Шаг изменения кредитного плеча.
+	} `json:"leverageFilter"` // Объект, содержащий информацию о кредитном плече.
 	PriceFilter struct {
-		TickSize string `json:"tickSize"`
-	} `json:"priceFilter"`
+		MinPrice string `json:"minPrice"` // Минимальная цена ордера.
+		MaxPrice string `json:"maxPrice"` // Максимальная цена ордера.
+		TickSize string `json:"tickSize"` // Минимальный шаг цены.
+	} `json:"priceFilter"` // Объект, содержащий информацию о фильтре цены.
+	LotSizeFilter struct {
+		MaxOrderQty         string `json:"maxOrderQty"`         // Максимальное количество в одном ордере.
+		MinOrderQty         string `json:"minOrderQty"`         // Минимальное количество в одном ордере.
+		QtyStep             string `json:"qtyStep"`             // Шаг изменения количества.
+		PostOnlyMaxOrderQty string `json:"postOnlyMaxOrderQty"` // Максимальное количество для Post-Only ордера.
+		MaxMktOrderQty      string `json:"maxMktOrderQty"`
+		MinNotionalValue    string `json:"minNotionalValue"`
+	} `json:"lotSizeFilter"` // Объект, содержащий информацию о фильтре размера лота.
 	RiskParameters struct {
-		LimitParameter  string `json:"limitParameter"`
-		MarketParameter string `json:"marketParameter"`
+		PriceLimitRatioX string `json:"priceLimitRatioX"`
+		PriceLimitRatioY string `json:"priceLimitRatioY"`
 	} `json:"riskParameters"`
 }
 
@@ -464,6 +483,19 @@ type AccountWalletBalanceResponse struct {
 	CommonResponse
 	Result struct {
 		List []AccountWalletBalance `json:"list"`
+	} `json:"result"`
+}
+
+type AccountFeeRate struct {
+	Symbol       string `json:"symbol"`
+	TakerFeeRate string `json:"takerFeeRate"`
+	MakerFeeRate string `json:"makerFeeRate"`
+}
+
+type AccountFeeRateResponse struct {
+	CommonResponse
+	Result struct {
+		List []AccountFeeRate `json:"list"`
 	} `json:"result"`
 }
 

@@ -41,3 +41,11 @@ func (r *Account) GetTransactionLog(
 		Params: param.Params(),
 	}, cred.ApiKey, cred.ApiSecret)
 }
+
+func (r *Account) GetFeeRate(ctx context.Context, cred CredentialParam, param AccountFeeRateParam) (*http.Request, error) {
+	return personalRequest(ctx, Request{
+		Url:    r.host.JoinPath("/v5/account/fee-rate").String(),
+		Method: http.MethodGet,
+		Params: param.Params(),
+	}, cred.ApiKey, cred.ApiSecret)
+}

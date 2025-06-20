@@ -559,3 +559,22 @@ func (p AmendOrderParam) Params() []Param {
 	}
 	return params
 }
+
+type AccountFeeRateParam struct {
+	Category domain.OrderCategory
+	Symbol   string
+	BaseCoin string
+}
+
+func (p AccountFeeRateParam) Params() []Param {
+	var params []Param
+	params = append(params, Param{Key: "category", Value: string(p.Category)})
+	if p.Symbol != "" {
+		params = append(params, Param{Key: "symbol", Value: p.Symbol})
+	}
+	if p.BaseCoin != "" {
+		params = append(params, Param{Key: "baseCoin", Value: p.BaseCoin})
+	}
+
+	return params
+}

@@ -2,6 +2,7 @@ package v5
 
 import (
 	"context"
+	"errors"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/domain"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/request"
 	"github.com/AlekseyPorandaykin/crypto_loader/pkg/bybit/v5/response"
@@ -54,6 +55,26 @@ func (c *Client) AccountGetAccountInfo(
 	result := make(map[string]any)
 	if err := c.sendRequest(req, &result); err != nil {
 		return nil, err
+	}
+	return result, nil
+}
+
+func (c *Client) AccountFreeRate(ctx context.Context, cred request.CredentialParam, params request.AccountFeeRateParam) (response.AccountFeeRateResponse, error) {
+	c.muCreateRequest.Lock()
+	defer c.muCreateRequest.Unlock()
+	if params.Category == "" {
+		return response.AccountFeeRateResponse{}, errors.New("category required")
+	}
+	if params.BaseCoin != "" && params.Category != domain.OptionOrderCategory {
+		return response.AccountFeeRateResponse{}, errors.New("base coin valid only for option category")
+	}
+	req, err := c.accountRequest.GetFeeRate(ctx, cred, params)
+	if err != nil {
+		return response.AccountFeeRateResponse{}, WrapErrCreateRequest(err)
+	}
+	result := response.AccountFeeRateResponse{}
+	if err := c.sendRequest(req, &result); err != nil {
+		return response.AccountFeeRateResponse{}, err
 	}
 	return result, nil
 }
